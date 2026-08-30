@@ -1,12 +1,32 @@
 import { useMemo, useState } from 'react'
+import { Avatar } from '@/components/ProfileBits'
 import { IconClock, IconLink, IconPlus, IconSearch } from '@/components/icons'
 import { Button, Chip, Empty, Input, Modal, Tag, cx } from '@/components/ui'
 import { SLOTS, SLOT_META } from '@/lib/slots'
-import { AISLE_META } from '@/lib/grocery'
-import { fmtQty } from '@/lib/grocery'
-import type { MealSlot, Recipe } from '@/types'
+import { AISLE_META, fmtQty } from '@/lib/grocery'
+import { suitsDiet } from '@/lib/profiles'
+import type { MealSlot, Profile, Recipe } from '@/types'
 
-export function RecipeCardMini({ recipe, onClick }: { recipe: Recipe; onClick?: () => void }) {
+const CUISINES = [
+  'Indian',
+  'Asian',
+  'Middle Eastern',
+  'Italian',
+  'Continental',
+  'Mexican',
+  'Salads',
+] as const
+
+export function RecipeCardMini({
+  recipe,
+  onClick,
+  blockedFor = [],
+}: {
+  recipe: Recipe
+  onClick?: () => void
+  /** Profiles whose diet this dish breaks — it will be added only for the rest. */
+  blockedFor?: Profile[]
+}) {
   return (
     <button
       onClick={onClick}
@@ -16,7 +36,17 @@ export function RecipeCardMini({ recipe, onClick }: { recipe: Recipe; onClick?: 
         {recipe.emoji}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{recipe.name}</span>
+        <span className="flex items-center gap-2">
+          <span className="truncate text-sm font-medium">{recipe.name}</span>
+          {blockedFor.map((p) => (
+            <span
+              key={p.id}
+              className="shrink-0 rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] text-rose-200"
+            >
+              not for {p.name}
+            </span>
+          ))}
+        </span>
         <span className="mt-0.5 flex items-center gap-2 text-[12px] text-white/45">
           <span className="tabular-nums text-lime-200/80">{recipe.calories} kcal</span>
           <span>·</span>
@@ -26,6 +56,8 @@ export function RecipeCardMini({ recipe, onClick }: { recipe: Recipe; onClick?: 
           </span>
           <span>·</span>
           <span className="tabular-nums">{recipe.protein}g P</span>
+          <span>·</span>
+          <span>{recipe.cuisine}</span>
         </span>
       </span>
       <IconPlus
@@ -42,6 +74,7 @@ export function RecipePicker({
   onClose,
   recipes,
   slot,
+  targets,
   onPick,
   onCreate,
   title,
@@ -51,38 +84,94 @@ export function RecipePicker({
   onClose: () => void
   recipes: Recipe[]
   slot: MealSlot | null
-  onPick: (recipe: Recipe) => void
+  /** Who the meal is being planned for. */
+  targets: Profile[]
+  onPick: (recipe: Recipe, profileIds: string[]) => void
   onCreate?: () => void
   title?: string
   subtitle?: string
 }) {
   const [q, setQ] = useState('')
-  const [filter, setFilter] = useState<MealSlot | 'all'>('all')
+  const [slotFilter, setSlotFilter] = useState<MealSlot | 'all'>('all')
+  const [cuisine, setCuisine] = useState<string>('all')
+  const [showAll, setShowAll] = useState(false)
+  const [chosen, setChosen] = useState<string[]>(() => targets.map((t) => t.id))
 
-  const active = slot ?? (filter === 'all' ? null : filter)
+  const active = slot ?? (slotFilter === 'all' ? null : slotFilter)
+
+  const forProfiles = useMemo(
+    () => targets.filter((t) => chosen.includes(t.id)),
+    [targets, chosen],
+  )
+
+  const blockedFor = (r: Recipe) => forProfiles.filter((p) => !suitsDiet(r, p.diet))
 
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return recipes
       .filter((r) => (active ? r.slots.includes(active) : true))
+      .filter((r) => cuisine === 'all' || r.cuisine === cuisine)
+      .filter((r) => showAll || forProfiles.every((p) => suitsDiet(r, p.diet)))
       .filter(
         (r) =>
           !needle ||
           r.name.toLowerCase().includes(needle) ||
+          r.cuisine.toLowerCase().includes(needle) ||
           r.tags.some((t) => t.includes(needle)) ||
           r.ingredients.some((i) => i.item.toLowerCase().includes(needle)),
       )
       .sort((a, b) => a.name.localeCompare(b.name))
-  }, [recipes, active, q])
+  }, [recipes, active, cuisine, q, showAll, forProfiles])
+
+  const pick = (r: Recipe) => {
+    const eligible = forProfiles.filter((p) => suitsDiet(r, p.diet)).map((p) => p.id)
+    if (!eligible.length) return
+    onPick(r, eligible)
+    onClose()
+  }
+
+  const hiddenCount = showAll
+    ? 0
+    : recipes.filter(
+        (r) =>
+          (!active || r.slots.includes(active)) &&
+          !forProfiles.every((p) => suitsDiet(r, p.diet)),
+      ).length
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       title={title ?? (slot ? `Add ${SLOT_META[slot].label.toLowerCase()}` : 'Pick a dish')}
-      subtitle={subtitle ?? `${shown.length} dishes in your library`}
+      subtitle={subtitle ?? `${shown.length} dishes match`}
     >
       <div className="space-y-3">
+        {targets.length > 1 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/5 px-3 py-2.5">
+            <span className="text-[12px] uppercase tracking-[0.08em] text-white/45">For</span>
+            {targets.map((p) => {
+              const on = chosen.includes(p.id)
+              return (
+                <button
+                  key={p.id}
+                  onClick={() =>
+                    setChosen((c) =>
+                      on ? (c.length > 1 ? c.filter((x) => x !== p.id) : c) : [...c, p.id],
+                    )
+                  }
+                  className={cx(
+                    'flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[13px] transition cursor-pointer',
+                    on ? 'bg-white text-ink-950 font-medium' : 'bg-white/8 text-white/50',
+                  )}
+                >
+                  <Avatar profile={p} size="sm" />
+                  {p.name}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         <div className="relative">
           <IconSearch
             width={16}
@@ -93,39 +182,73 @@ export function RecipePicker({
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search dishes, tags or ingredients…"
+            placeholder="Search dishes, cuisines or ingredients…"
             className="pl-10"
           />
         </div>
 
         {!slot && (
           <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-            <Chip active={filter === 'all'} onClick={() => setFilter('all')}>
-              All
+            <Chip active={slotFilter === 'all'} onClick={() => setSlotFilter('all')}>
+              All meals
             </Chip>
             {SLOTS.map((s) => (
-              <Chip key={s} active={filter === s} onClick={() => setFilter(s)}>
+              <Chip key={s} active={slotFilter === s} onClick={() => setSlotFilter(s)}>
                 {SLOT_META[s].emoji} {SLOT_META[s].label}
               </Chip>
             ))}
           </div>
         )}
 
+        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+          <Chip active={cuisine === 'all'} onClick={() => setCuisine('all')}>
+            Any cuisine
+          </Chip>
+          {CUISINES.map((c) => (
+            <Chip key={c} active={cuisine === c} onClick={() => setCuisine(c)}>
+              {c}
+            </Chip>
+          ))}
+        </div>
+
         <div className="space-y-2">
           {shown.map((r) => (
             <RecipeCardMini
               key={r.id}
               recipe={r}
-              onClick={() => {
-                onPick(r)
-                onClose()
-              }}
+              blockedFor={blockedFor(r)}
+              onClick={() => pick(r)}
             />
           ))}
           {!shown.length && (
-            <Empty emoji="🔍" title="Nothing matches" hint="Try a different word, or add a new dish." />
+            <Empty
+              emoji="🔍"
+              title="Nothing matches"
+              hint="Try another word or cuisine, or add a new dish."
+            />
           )}
         </div>
+
+        {hiddenCount > 0 && (
+          <button
+            onClick={() => setShowAll(true)}
+            className="w-full rounded-2xl border border-dashed border-white/12 px-3 py-2.5 text-[13px] text-white/45 transition hover:border-white/25 hover:text-white cursor-pointer"
+          >
+            {hiddenCount} more dishes don&apos;t suit{' '}
+            {forProfiles
+              .map((p) => p.name)
+              .join(' and ')}
+            &apos;s diet — show them anyway
+          </button>
+        )}
+        {showAll && (
+          <button
+            onClick={() => setShowAll(false)}
+            className="w-full rounded-2xl px-3 py-2 text-[13px] text-white/40 transition hover:text-white cursor-pointer"
+          >
+            Hide dishes that don&apos;t suit the diet
+          </button>
+        )}
 
         {onCreate && (
           <Button
@@ -169,7 +292,7 @@ export function RecipeDetail({
       onClose={onClose}
       wide
       title={`${recipe.emoji}  ${recipe.name}`}
-      subtitle={`${recipe.calories} kcal per serving · ${recipe.minutes} min · makes ${recipe.servings}`}
+      subtitle={`${recipe.cuisine} · ${recipe.calories} kcal per serving · ${recipe.minutes} min · makes ${recipe.servings}`}
     >
       <div className="space-y-6">
         <div className="grid grid-cols-4 gap-2">
@@ -192,11 +315,23 @@ export function RecipeDetail({
         </div>
 
         <div className="flex flex-wrap gap-1.5">
+          <Tag className="bg-white/12 text-white/75">{recipe.cuisine}</Tag>
           {recipe.slots.map((s) => (
             <Tag key={s} className="bg-white/12 text-white/75">
               {SLOT_META[s].emoji} {SLOT_META[s].label}
             </Tag>
           ))}
+          {recipe.contains.length === 0 ? (
+            <Tag className="bg-lime-300/15 text-lime-200">vegetarian · egg-free</Tag>
+          ) : (
+            recipe.contains
+              .filter((c) => c !== 'dairy')
+              .map((c) => (
+                <Tag key={c} className="bg-rose-400/15 text-rose-200">
+                  contains {c}
+                </Tag>
+              ))
+          )}
           {recipe.tags.map((t) => (
             <Tag key={t}>{t}</Tag>
           ))}

@@ -1,22 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
+import { Avatar } from '@/components/ProfileBits'
 import { IconCamera, IconCheck, IconSparkle, IconTrash, IconUpload, IconX } from '@/components/icons'
-import { Button, Card, Chip, Empty, Field, Input, Select, Tag, cx } from '@/components/ui'
+import { Button, Card, Chip, Empty, Field, FieldGroup, Input, Select, Tag, cx } from '@/components/ui'
 import { PORTION_SCALE, type PortionSize } from '@/data/foods'
 import { longDate, todayISO } from '@/lib/date'
 import { SLOTS, SLOT_META } from '@/lib/slots'
 import { useStore } from '@/lib/store'
-import { analyzeWithClaude, compressImage, estimateFromText, type Analysis } from '@/lib/vision'
+import { analyzePhoto, compressImage, visionReady, type Analysis } from '@/lib/vision'
 import type { MealSlot } from '@/types'
 
 type Stage = 'capture' | 'review'
 
 export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
-  const { state, addPhoto, removePhoto } = useStore()
+  const { state, scoped, addPhoto, removePhoto } = useStore()
   const [stage, setStage] = useState<Stage>('capture')
   const [image, setImage] = useState<string | null>(null)
   const [hint, setHint] = useState('')
   const [portion, setPortion] = useState<PortionSize>('medium')
   const [slot, setSlot] = useState<MealSlot>(guessSlot())
+  const [who, setWho] = useState<string>(() => scoped[0]?.id ?? '')
   const [date, setDate] = useState(todayISO())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -27,7 +29,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
   const streamRef = useRef<MediaStream | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const hasKey = Boolean(state.settings.apiKey.trim())
+  const hasVision = visionReady(state.settings)
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -85,18 +87,14 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
   }
 
   const analyse = async () => {
+    if (!(hasVision && image) && !hint.trim()) {
+      setError('The on-device estimate needs a hint — list what is on the plate.')
+      return
+    }
     setBusy(true)
     setError('')
     try {
-      if (hasKey && image) {
-        setResult(await analyzeWithClaude(image, state.settings.apiKey.trim(), hint))
-      } else {
-        if (!hint.trim()) {
-          setError('Without an API key the estimate needs a hint — list what is on the plate.')
-          return
-        }
-        setResult(estimateFromText(hint, portion))
-      }
+      setResult(await analyzePhoto(image ?? '', state.settings, hint, portion))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Analysis failed.')
     } finally {
@@ -116,6 +114,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
   const log = () => {
     if (!result) return
     addPhoto({
+      profileId: who || state.profiles[0].id,
       date,
       slot,
       image: image ?? undefined,
@@ -133,7 +132,9 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
   const patchResult = (patch: Partial<Analysis>) =>
     setResult((r) => (r ? { ...r, ...patch, source: 'manual' } : r))
 
-  const recent = state.photos.slice(0, 8)
+  const recent = state.photos
+    .filter((p) => scoped.some((x) => x.id === p.profileId))
+    .slice(0, 8)
 
   return (
     <div className="animate-rise space-y-5">
@@ -141,8 +142,19 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
         <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Snap & track</h1>
         <p className="mt-0.5 text-[13px] text-white/45">
           Photograph a meal and log its calories.{' '}
-          {hasKey ? (
-            <span className="text-lime-300">Claude vision is on.</span>
+          {hasVision ? (
+            <>
+              Reading photos with{' '}
+              <button
+                onClick={onOpenSettings}
+                className="text-lime-300 underline underline-offset-2 cursor-pointer"
+              >
+                {state.settings.visionProvider === 'anthropic'
+                  ? 'Claude'
+                  : state.settings.openrouterModel || 'OpenRouter'}
+              </button>
+              .
+            </>
           ) : (
             <>
               Running on the built-in food table —{' '}
@@ -150,7 +162,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                 onClick={onOpenSettings}
                 className="text-lime-300 underline underline-offset-2 cursor-pointer"
               >
-                add an API key
+                connect Anthropic or OpenRouter
               </button>{' '}
               for real photo analysis.
             </>
@@ -233,9 +245,9 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
           {stage === 'review' && (
             <div className="space-y-4 border-t border-white/10 p-4 sm:p-5">
               <Field
-                label={hasKey ? 'Anything worth mentioning?' : 'What is on the plate?'}
+                label={hasVision ? 'Anything worth mentioning?' : 'What is on the plate?'}
                 hint={
-                  hasKey
+                  hasVision
                     ? 'Optional. Portion hints like “large bowl” sharpen the estimate.'
                     : 'Comma-separated, e.g. “grilled chicken, rice, salad” or “150g salmon, broccoli”.'
                 }
@@ -243,13 +255,15 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                 <Input
                   value={hint}
                   onChange={(e) => setHint(e.target.value)}
-                  placeholder={hasKey ? 'Cooked in olive oil, restaurant portion…' : 'chicken, rice, salad'}
+                  placeholder={
+                    hasVision ? 'Cooked in olive oil, restaurant portion…' : 'chicken, rice, salad'
+                  }
                   onKeyDown={(e) => e.key === 'Enter' && void analyse()}
                 />
               </Field>
 
-              {!hasKey && (
-                <Field label="Portion size">
+              {!hasVision && (
+                <FieldGroup label="Portion size">
                   <div className="flex flex-wrap gap-2">
                     {(Object.keys(PORTION_SCALE) as PortionSize[]).map((p) => (
                       <Chip key={p} active={portion === p} onClick={() => setPortion(p)}>
@@ -257,7 +271,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                       </Chip>
                     ))}
                   </div>
-                </Field>
+                </FieldGroup>
               )}
 
               <Button
@@ -333,6 +347,28 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                 </div>
               )}
 
+              {state.profiles.length > 1 && (
+                <FieldGroup label="Who ate it">
+                  <div className="flex flex-wrap gap-2">
+                    {state.profiles.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setWho(p.id)}
+                        className={cx(
+                          'flex items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-[13px] transition cursor-pointer',
+                          who === p.id
+                            ? 'bg-white text-ink-950 font-medium'
+                            : 'glass text-white/55 hover:text-white',
+                        )}
+                      >
+                        <Avatar profile={p} size="sm" />
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </FieldGroup>
+              )}
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Meal">
                   <Select value={slot} onChange={(e) => setSlot(e.target.value as MealSlot)}>
@@ -403,6 +439,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                     <span>{SLOT_META[p.slot].label}</span>
                   </div>
                   <div className="mt-2 flex items-center gap-1.5">
+                    <Tag>{state.profiles.find((x) => x.id === p.profileId)?.name ?? '—'}</Tag>
                     <Tag>{longDate(p.date)}</Tag>
                     <Tag>{p.source === 'ai' ? 'AI' : p.source === 'estimate' ? 'estimate' : 'manual'}</Tag>
                   </div>

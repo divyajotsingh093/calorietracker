@@ -8,6 +8,7 @@ import {
   IconFlame,
   IconSettings,
 } from '@/components/icons'
+import { Avatar } from '@/components/ProfileBits'
 import { cx } from '@/components/ui'
 import { todayISO } from '@/lib/date'
 import { dayTotals } from '@/lib/nutrition'
@@ -29,15 +30,21 @@ const TABS: { id: TabId; label: string; icon: typeof IconFlame }[] = [
 ]
 
 function Shell() {
-  const { state, recipeMap } = useStore()
+  const { state, recipeMap, scoped } = useStore()
   const [tab, setTab] = useState<TabId>('today')
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  const eaten = dayTotals(todayISO(), state.plan, state.photos, recipeMap, 'eaten')
-  const pct =
-    state.settings.calorieGoal > 0
-      ? Math.min(100, (eaten.calories / state.settings.calorieGoal) * 100)
-      : 0
+  const todays = scoped.map((profile) => {
+    const eaten = dayTotals(todayISO(), profile.id, state.plan, state.photos, recipeMap, 'eaten')
+    return {
+      profile,
+      eaten: eaten.calories,
+      pct:
+        profile.calorieGoal > 0
+          ? Math.min(100, (eaten.calories / profile.calorieGoal) * 100)
+          : 0,
+    }
+  })
 
   // Number keys jump between tabs.
   useEffect(() => {
@@ -91,20 +98,28 @@ function Shell() {
         ))}
 
         <div className="mt-auto space-y-3">
-          <div className="glass rounded-2xl p-3.5">
-            <div className="mb-2 flex items-baseline justify-between">
-              <span className="text-[12px] uppercase tracking-[0.08em] text-white/45">Today</span>
-              <span className="text-[13px] tabular-nums text-white/70">
-                {Math.round(eaten.calories)}
-                <span className="text-white/30">/{state.settings.calorieGoal}</span>
-              </span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-lime-300 to-emerald-400 transition-[width] duration-700"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
+          <div className="glass space-y-3 rounded-2xl p-3.5">
+            <span className="block text-[12px] uppercase tracking-[0.08em] text-white/45">
+              Today
+            </span>
+            {todays.map(({ profile, eaten, pct }) => (
+              <div key={profile.id}>
+                <div className="mb-1.5 flex items-center gap-2">
+                  <Avatar profile={profile} size="sm" />
+                  <span className="flex-1 text-[13px] text-white/70">{profile.name}</span>
+                  <span className="text-[13px] tabular-nums text-white/70">
+                    {Math.round(eaten)}
+                    <span className="text-white/30">/{profile.calorieGoal}</span>
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-lime-300 to-emerald-400 transition-[width] duration-700"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
           <button
             onClick={() => setSettingsOpen(true)}
@@ -124,8 +139,12 @@ function Shell() {
           </span>
           <div className="flex-1">
             <div className="font-display font-bold leading-tight tracking-tight">Nourish</div>
-            <div className="text-[11px] tabular-nums text-white/40">
-              {Math.round(eaten.calories)} / {state.settings.calorieGoal} kcal today
+            <div className="flex gap-2 text-[11px] tabular-nums text-white/40">
+              {todays.map(({ profile, eaten }) => (
+                <span key={profile.id}>
+                  {profile.emoji} {Math.round(eaten)}/{profile.calorieGoal}
+                </span>
+              ))}
             </div>
           </div>
           <button

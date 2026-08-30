@@ -10,44 +10,106 @@ import {
 } from 'react'
 import { SEED_RECIPES } from '@/data/recipes'
 import { addDays, currentMondayISO } from '@/lib/date'
-import type { AppState, MealSlot, PhotoLog, PlanEntry, Recipe, Settings } from '@/types'
+import { DEFAULT_PROFILES } from '@/lib/profiles'
+import { DEFAULT_OPENROUTER_MODEL } from '@/lib/vision'
+import type {
+  AppState,
+  MealSlot,
+  PhotoLog,
+  PlanEntry,
+  Profile,
+  Recipe,
+  Scope,
+  Settings,
+} from '@/types'
 
-const KEY = 'nourish.state.v1'
-const VERSION = 1
+const KEY = 'nourish.state.v2'
+const VERSION = 2
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 
 const DEFAULT_SETTINGS: Settings = {
-  name: '',
-  calorieGoal: 2100,
-  proteinGoal: 140,
-  carbGoal: 220,
-  fatGoal: 70,
+  visionProvider: 'offline',
   apiKey: '',
+  openrouterKey: '',
+  openrouterModel: DEFAULT_OPENROUTER_MODEL,
 }
 
-/** A sensible starter fortnight so the app is never an empty grid. */
-function seedPlan(anchor: string): PlanEntry[] {
-  const bySlot: Record<MealSlot, string[]> = {
-    breakfast: ['r-overnight-oats', 'r-veggie-scramble', 'r-smoothie-bowl', 'r-avocado-toast', 'r-yoghurt-parfait', 'r-banana-pancakes', 'r-shakshuka'],
-    lunch: ['r-chicken-burrito-bowl', 'r-mediterranean-quinoa', 'r-lentil-soup', 'r-caprese-panini', 'r-chickpea-wrap', 'r-tuna-poke', 'r-mediterranean-quinoa'],
-    dinner: ['r-salmon-traybake', 'r-thai-green-curry', 'r-turkey-meatballs', 'r-tofu-bibimbap', 'r-fish-tacos', 'r-beef-stirfry', 'r-roast-chicken'],
-    snack: ['r-hummus-plate', 'r-energy-balls', 'r-hummus-plate', 'r-energy-balls', 'r-yoghurt-parfait', 'r-energy-balls', 'r-hummus-plate'],
-  }
+/** `[Ruchi, Dj]` when the two differ, one id when they eat the same thing. */
+type Pick = string | [string, string]
+
+interface DaySpec {
+  breakfast: Pick
+  lunch: Pick
+  dinner: Pick
+  snack: Pick[]
+}
+
+/**
+ * A starter week, Monday first. Mostly shared meals, with the dinner (and
+ * sometimes breakfast) swapped where Dj wants meat or fish. Both columns land
+ * comfortably under 2000 kcal a day.
+ */
+const WEEK: DaySpec[] = [
+  {
+    breakfast: 'r-poha',
+    lunch: 'r-falafel-bowl',
+    dinner: 'r-palak-paneer',
+    snack: ['r-yoghurt-parfait', 'r-masala-makhana'],
+  },
+  {
+    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
+    lunch: 'r-mediterranean-quinoa',
+    dinner: ['r-thai-green-curry-veg', 'r-thai-green-curry'],
+    snack: ['r-hummus-plate', 'r-fruit-nuts'],
+  },
+  {
+    breakfast: 'r-overnight-oats',
+    lunch: 'r-minestrone',
+    dinner: ['r-pasta-norma', 'r-turkey-meatballs'],
+    snack: ['r-energy-balls', 'r-yoghurt-parfait'],
+  },
+  {
+    breakfast: 'r-idli-sambar',
+    lunch: 'r-chana-masala',
+    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
+    snack: ['r-masala-makhana', 'r-fruit-nuts'],
+  },
+  {
+    breakfast: 'r-smoothie-bowl',
+    lunch: 'r-fattoush-halloumi',
+    dinner: ['r-sweet-potato-tacos', 'r-fish-tacos'],
+    snack: ['r-dhokla', 'r-yoghurt-parfait'],
+  },
+  {
+    breakfast: ['r-pb-banana-toast', 'r-avocado-toast'],
+    lunch: 'r-chickpea-halloumi-salad',
+    dinner: ['r-veg-biryani', 'r-chicken-biryani'],
+    snack: ['r-energy-balls', 'r-hummus-plate'],
+  },
+  {
+    breakfast: ['r-besan-chilla', 'r-shakshuka'],
+    lunch: 'r-mujadara',
+    dinner: ['r-mushroom-risotto', 'r-roast-chicken'],
+    snack: ['r-sesame-slaw', 'r-masala-makhana'],
+  },
+]
+
+function seedPlan(anchor: string, profiles: Profile[]): PlanEntry[] {
   const entries: PlanEntry[] = []
-  for (let i = 0; i < 7; i++) {
-    const date = addDays(anchor, i)
-    for (const slot of ['breakfast', 'lunch', 'dinner', 'snack'] as MealSlot[]) {
-      entries.push({
-        id: uid(),
-        date,
-        slot,
-        recipeId: bySlot[slot][i],
-        servings: slot === 'snack' ? 1 : 1,
-        eaten: false,
-      })
-    }
+  const push = (date: string, slot: MealSlot, pick: Pick) => {
+    profiles.forEach((profile, i) => {
+      const recipeId = Array.isArray(pick) ? pick[Math.min(i, pick.length - 1)] : pick
+      entries.push({ id: uid(), profileId: profile.id, date, slot, recipeId, servings: 1, eaten: false })
+    })
   }
+  WEEK.forEach((day, i) => {
+    const date = addDays(anchor, i)
+    push(date, 'breakfast', day.breakfast)
+    push(date, 'lunch', day.lunch)
+    push(date, 'dinner', day.dinner)
+    day.snack.forEach((s) => push(date, 'snack', s))
+  })
   return entries
 }
 
@@ -56,8 +118,10 @@ function freshState(): AppState {
   return {
     version: VERSION,
     settings: DEFAULT_SETTINGS,
+    profiles: DEFAULT_PROFILES,
+    scope: 'both',
     recipes: SEED_RECIPES,
-    plan: seedPlan(anchor),
+    plan: seedPlan(anchor, DEFAULT_PROFILES),
     photos: [],
     anchor,
     checked: [],
@@ -79,6 +143,8 @@ function load(): AppState {
       ...parsed,
       version: VERSION,
       settings: { ...base.settings, ...(parsed.settings ?? {}) },
+      profiles: parsed.profiles?.length ? parsed.profiles : base.profiles,
+      scope: parsed.scope ?? base.scope,
       recipes: [...SEED_RECIPES.map((r) => edited.get(r.id) ?? r), ...custom],
       plan: parsed.plan ?? base.plan,
       photos: parsed.photos ?? [],
@@ -96,13 +162,26 @@ interface Store {
   recipeMap: Map<string, Recipe>
   /** dates of the visible fortnight */
   days: string[]
+  /** the profiles the current scope covers */
+  scoped: Profile[]
+  /** the single profile in view, or null in "both" mode */
+  activeProfile: Profile | null
+  setScope: (scope: Scope) => void
   setSettings: (patch: Partial<Settings>) => void
+  updateProfile: (id: string, patch: Partial<Profile>) => void
   setAnchor: (iso: string) => void
-  addPlanEntry: (date: string, slot: MealSlot, recipeId: string, servings?: number) => void
+  addPlanEntry: (
+    date: string,
+    slot: MealSlot,
+    recipeId: string,
+    profileIds: string[],
+    servings?: number,
+  ) => void
   removePlanEntry: (id: string) => void
+  removeMeal: (date: string, slot: MealSlot, recipeId: string, profileIds: string[]) => void
   updatePlanEntry: (id: string, patch: Partial<PlanEntry>) => void
   toggleEaten: (id: string) => void
-  movePlanEntry: (id: string, date: string, slot: MealSlot) => void
+  movePlanEntry: (ids: string[], date: string, slot: MealSlot) => void
   copyDay: (from: string, to: string) => void
   clearDay: (date: string) => void
   copyWeek: (fromWeek: 0 | 1, toWeek: 0 | 1) => void
@@ -144,30 +223,74 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [state.anchor],
   )
 
-  const recipeMap = useMemo(
-    () => new Map(state.recipes.map((r) => [r.id, r])),
-    [state.recipes],
+  const recipeMap = useMemo(() => new Map(state.recipes.map((r) => [r.id, r])), [state.recipes])
+
+  const scoped = useMemo(
+    () =>
+      state.scope === 'both'
+        ? state.profiles
+        : state.profiles.filter((p) => p.id === state.scope),
+    [state.profiles, state.scope],
   )
+
+  const activeProfile = scoped.length === 1 ? scoped[0] : null
 
   const api = useMemo<Store>(() => {
     const weekDates = (s: AppState, week: 0 | 1) =>
       Array.from({ length: 7 }, (_, i) => addDays(s.anchor, week * 7 + i))
 
+    /** Scope-aware: bulk actions only touch the profiles currently in view. */
+    const inScope = (s: AppState, e: PlanEntry) =>
+      s.scope === 'both' || e.profileId === s.scope
+
     return {
       state,
       recipeMap,
       days,
+      scoped,
+      activeProfile,
 
+      setScope: (scope) => patch((s) => ({ ...s, scope })),
       setSettings: (p) => patch((s) => ({ ...s, settings: { ...s.settings, ...p } })),
-      setAnchor: (iso) => patch((s) => ({ ...s, anchor: iso })),
-
-      addPlanEntry: (date, slot, recipeId, servings = 1) =>
+      updateProfile: (id, p) =>
         patch((s) => ({
           ...s,
-          plan: [...s.plan, { id: uid(), date, slot, recipeId, servings, eaten: false }],
+          profiles: s.profiles.map((x) => (x.id === id ? { ...x, ...p } : x)),
+        })),
+      setAnchor: (iso) => patch((s) => ({ ...s, anchor: iso })),
+
+      addPlanEntry: (date, slot, recipeId, profileIds, servings = 1) =>
+        patch((s) => ({
+          ...s,
+          plan: [
+            ...s.plan,
+            ...profileIds.map((profileId) => ({
+              id: uid(),
+              profileId,
+              date,
+              slot,
+              recipeId,
+              servings,
+              eaten: false,
+            })),
+          ],
         })),
 
       removePlanEntry: (id) => patch((s) => ({ ...s, plan: s.plan.filter((e) => e.id !== id) })),
+
+      removeMeal: (date, slot, recipeId, profileIds) =>
+        patch((s) => ({
+          ...s,
+          plan: s.plan.filter(
+            (e) =>
+              !(
+                e.date === date &&
+                e.slot === slot &&
+                e.recipeId === recipeId &&
+                profileIds.includes(e.profileId)
+              ),
+          ),
+        })),
 
       updatePlanEntry: (id, p) =>
         patch((s) => ({ ...s, plan: s.plan.map((e) => (e.id === id ? { ...e, ...p } : e)) })),
@@ -178,31 +301,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           plan: s.plan.map((e) => (e.id === id ? { ...e, eaten: !e.eaten } : e)),
         })),
 
-      movePlanEntry: (id, date, slot) =>
+      movePlanEntry: (ids, date, slot) =>
         patch((s) => ({
           ...s,
-          plan: s.plan.map((e) => (e.id === id ? { ...e, date, slot } : e)),
+          plan: s.plan.map((e) => (ids.includes(e.id) ? { ...e, date, slot } : e)),
         })),
 
       copyDay: (from, to) =>
         patch((s) => {
-          const source = s.plan.filter((e) => e.date === from)
-          const kept = s.plan.filter((e) => e.date !== to)
+          const source = s.plan.filter((e) => e.date === from && inScope(s, e))
+          const kept = s.plan.filter((e) => !(e.date === to && inScope(s, e)))
           return {
             ...s,
             plan: [...kept, ...source.map((e) => ({ ...e, id: uid(), date: to, eaten: false }))],
           }
         }),
 
-      clearDay: (date) => patch((s) => ({ ...s, plan: s.plan.filter((e) => e.date !== date) })),
+      clearDay: (date) =>
+        patch((s) => ({
+          ...s,
+          plan: s.plan.filter((e) => !(e.date === date && inScope(s, e))),
+        })),
 
       copyWeek: (fromWeek, toWeek) =>
         patch((s) => {
           const from = weekDates(s, fromWeek)
           const to = weekDates(s, toWeek)
           const map = new Map(from.map((d, i) => [d, to[i]]))
-          const source = s.plan.filter((e) => map.has(e.date))
-          const kept = s.plan.filter((e) => !to.includes(e.date))
+          const source = s.plan.filter((e) => map.has(e.date) && inScope(s, e))
+          const kept = s.plan.filter((e) => !(to.includes(e.date) && inScope(s, e)))
           return {
             ...s,
             plan: [
@@ -215,7 +342,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       clearWeek: (week) =>
         patch((s) => {
           const dates = weekDates(s, week)
-          return { ...s, plan: s.plan.filter((e) => !dates.includes(e.date)) }
+          return { ...s, plan: s.plan.filter((e) => !(dates.includes(e.date) && inScope(s, e))) }
         }),
 
       saveRecipe: (recipe) =>
@@ -273,7 +400,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       },
     }
-  }, [state, recipeMap, days, patch])
+  }, [state, recipeMap, days, scoped, activeProfile, patch])
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>
 }

@@ -112,6 +112,30 @@ export function Field({
   )
 }
 
+/**
+ * Same look as `Field`, but a labelled group rather than a `<label>` — for
+ * rows of buttons, where a wrapping label would swallow their accessible names.
+ */
+export function FieldGroup({
+  label,
+  hint,
+  children,
+}: {
+  label: string
+  hint?: string
+  children: ReactNode
+}) {
+  return (
+    <div role="group" aria-label={label}>
+      <div className="mb-1.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white/45">
+        {label}
+      </div>
+      {children}
+      {hint && <p className="mt-1.5 text-[12px] text-white/40">{hint}</p>}
+    </div>
+  )
+}
+
 const inputBase =
   'w-full rounded-2xl bg-white/6 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-lime-300/50 focus:bg-white/10'
 

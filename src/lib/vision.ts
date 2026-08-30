@@ -1,4 +1,5 @@
 import { FOOD_REF, PORTION_SCALE, type FoodRef, type PortionSize } from '@/data/foods'
+import type { Settings } from '@/types'
 
 export interface AnalysisItem {
   name: string
@@ -164,6 +165,56 @@ interface AnthropicResponse {
   error?: { message?: string }
 }
 
+interface OpenAIStyleResponse {
+  choices?: { message?: { content?: string } }[]
+  error?: { message?: string }
+}
+
+/** Pull the JSON object out of a reply that may be fenced or chatty. */
+function parseReply(text: string): { label?: string; items?: AnalysisItem[]; note?: string } {
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start === -1 || end <= start) {
+    throw new Error('The model replied in an unexpected format. Try again.')
+  }
+  try {
+    return JSON.parse(text.slice(start, end + 1))
+  } catch {
+    throw new Error('The model replied in an unexpected format. Try again.')
+  }
+}
+
+function toAnalysis(
+  parsed: { label?: string; items?: AnalysisItem[]; note?: string },
+  fallbackNote: string,
+): Analysis {
+  const items = (parsed.items ?? []).map((i) => ({
+    name: String(i.name ?? 'item'),
+    grams: Math.round(Number(i.grams) || 0),
+    calories: Math.round(Number(i.calories) || 0),
+    protein: Math.round((Number(i.protein) || 0) * 10) / 10,
+    carbs: Math.round((Number(i.carbs) || 0) * 10) / 10,
+    fat: Math.round((Number(i.fat) || 0) * 10) / 10,
+  }))
+  const t = totals(items)
+  return {
+    items,
+    calories: Math.round(t.calories),
+    protein: Math.round(t.protein),
+    carbs: Math.round(t.carbs),
+    fat: Math.round(t.fat),
+    label: parsed.label ?? 'Meal',
+    note: parsed.note ?? fallbackNote,
+    source: 'ai',
+  }
+}
+
+function userText(hint: string): string {
+  return hint.trim()
+    ? `Extra context from the person eating it: ${hint.trim()}`
+    : 'Estimate the calories and macros in this meal.'
+}
+
 /**
  * Vision analysis via the Anthropic API, using a key the user pastes into
  * Settings. The key is kept in this browser's localStorage and is sent only
@@ -194,12 +245,7 @@ export async function analyzeWithClaude(
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-            {
-              type: 'text',
-              text: hint.trim()
-                ? `Extra context from the person eating it: ${hint.trim()}`
-                : 'Estimate the calories and macros in this meal.',
-            },
+            { type: 'text', text: userText(hint) },
           ],
         },
       ],
@@ -210,32 +256,94 @@ export async function analyzeWithClaude(
   if (!res.ok) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
 
   const text = json.content?.find((c) => c.type === 'text')?.text ?? ''
-  const jsonText = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1)
-  let parsed: { label?: string; items?: AnalysisItem[]; note?: string }
-  try {
-    parsed = JSON.parse(jsonText)
-  } catch {
-    throw new Error('The model replied in an unexpected format. Try again.')
-  }
+  return toAnalysis(parseReply(text), 'Analysed from the photo by Claude.')
+}
 
-  const items = (parsed.items ?? []).map((i) => ({
-    name: String(i.name ?? 'item'),
-    grams: Math.round(Number(i.grams) || 0),
-    calories: Math.round(Number(i.calories) || 0),
-    protein: Math.round((Number(i.protein) || 0) * 10) / 10,
-    carbs: Math.round((Number(i.carbs) || 0) * 10) / 10,
-    fat: Math.round((Number(i.fat) || 0) * 10) / 10,
-  }))
-  const t = totals(items)
+export const DEFAULT_OPENROUTER_MODEL = 'anthropic/claude-sonnet-4.5'
 
-  return {
-    items,
-    calories: Math.round(t.calories),
-    protein: Math.round(t.protein),
-    carbs: Math.round(t.carbs),
-    fat: Math.round(t.fat),
-    label: parsed.label ?? 'Meal',
-    note: parsed.note ?? 'Analysed from the photo.',
-    source: 'ai',
+/** A few vision-capable OpenRouter models, offered as a starting point. */
+export const OPENROUTER_MODELS = [
+  'anthropic/claude-sonnet-4.5',
+  'anthropic/claude-3.5-haiku',
+  'openai/gpt-4o',
+  'openai/gpt-4o-mini',
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-pro',
+  'meta-llama/llama-4-scout',
+  'qwen/qwen2.5-vl-72b-instruct',
+]
+
+/**
+ * Vision analysis via OpenRouter's OpenAI-compatible endpoint, so any
+ * vision-capable model on the platform can do the estimating.
+ */
+export async function analyzeWithOpenRouter(
+  dataUrl: string,
+  apiKey: string,
+  model: string,
+  hint: string,
+): Promise<Analysis> {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': window.location.origin,
+      'X-Title': 'Nourish meal tracker',
+    },
+    body: JSON.stringify({
+      model: model || DEFAULT_OPENROUTER_MODEL,
+      max_tokens: 1024,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: dataUrl } },
+            { type: 'text', text: userText(hint) },
+          ],
+        },
+      ],
+    }),
+  })
+
+  const json = (await res.json()) as OpenAIStyleResponse
+  if (!res.ok) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
+  // OpenRouter can answer 200 with an error body when the upstream model fails.
+  if (json.error?.message) throw new Error(json.error.message)
+
+  const text = json.choices?.[0]?.message?.content ?? ''
+  if (!text) throw new Error('The model returned an empty reply. Try another model.')
+  return toAnalysis(parseReply(text), `Analysed from the photo by ${model}.`)
+}
+
+/** Route a photo to whichever analyser the settings ask for. */
+export async function analyzePhoto(
+  dataUrl: string,
+  settings: Settings,
+  hint: string,
+  portion: PortionSize,
+): Promise<Analysis> {
+  // No photo (or no usable key) — fall back to the on-device table.
+  if (!dataUrl) return estimateFromText(hint, portion)
+  if (settings.visionProvider === 'anthropic' && settings.apiKey.trim()) {
+    return analyzeWithClaude(dataUrl, settings.apiKey.trim(), hint)
   }
+  if (settings.visionProvider === 'openrouter' && settings.openrouterKey.trim()) {
+    return analyzeWithOpenRouter(
+      dataUrl,
+      settings.openrouterKey.trim(),
+      settings.openrouterModel.trim() || DEFAULT_OPENROUTER_MODEL,
+      hint,
+    )
+  }
+  return estimateFromText(hint, portion)
+}
+
+/** True when a real vision model is configured and usable. */
+export function visionReady(settings: Settings): boolean {
+  if (settings.visionProvider === 'anthropic') return Boolean(settings.apiKey.trim())
+  if (settings.visionProvider === 'openrouter') return Boolean(settings.openrouterKey.trim())
+  return false
 }

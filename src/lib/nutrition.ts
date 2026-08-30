@@ -37,9 +37,13 @@ export function entryMacros(entry: PlanEntry, recipes: Map<string, Recipe>): Mac
   return scaleMacros(recipeMacros(r), entry.servings)
 }
 
-/** Totals for one date: planned meals + photo logs. `mode` picks what counts. */
+/**
+ * Totals for one date and one profile: planned meals + photo logs.
+ * `mode` picks whether everything planned counts, or only what was ticked off.
+ */
 export function dayTotals(
   date: string,
+  profileId: string,
   plan: PlanEntry[],
   photos: PhotoLog[],
   recipes: Map<string, Recipe>,
@@ -47,12 +51,12 @@ export function dayTotals(
 ): Macros {
   let total = ZERO
   for (const e of plan) {
-    if (e.date !== date) continue
+    if (e.date !== date || e.profileId !== profileId) continue
     if (mode === 'eaten' && !e.eaten) continue
     total = addMacros(total, entryMacros(e, recipes))
   }
   for (const p of photos) {
-    if (p.date !== date) continue
+    if (p.date !== date || p.profileId !== profileId) continue
     total = addMacros(total, p)
   }
   return total

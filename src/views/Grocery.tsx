@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { IconCheck, IconCopy, IconPlus, IconPrint, IconTrash } from '@/components/icons'
+import { ScopeSwitcher } from '@/components/ProfileBits'
 import { Button, Card, Chip, Empty, Input, cx } from '@/components/ui'
 import { rangeLabel } from '@/lib/date'
 import {
@@ -12,15 +13,20 @@ import {
 import { useStore } from '@/lib/store'
 
 export function Grocery() {
-  const { state, days, recipeMap, toggleChecked, clearChecked, addExtra, removeExtra } = useStore()
+  const { state, days, recipeMap, scoped, setScope, toggleChecked, clearChecked, addExtra, removeExtra } =
+    useStore()
   const [week, setWeek] = useState<0 | 1>(0)
   const [newItem, setNewItem] = useState('')
   const [copied, setCopied] = useState(false)
 
   const weekDays = days.slice(week * 7, week * 7 + 7)
+  const scopedPlan = useMemo(
+    () => state.plan.filter((e) => scoped.some((p) => p.id === e.profileId)),
+    [state.plan, scoped],
+  )
   const lines = useMemo(
-    () => buildGroceryList(weekDays, state.plan, recipeMap),
-    [weekDays, state.plan, recipeMap],
+    () => buildGroceryList(weekDays, scopedPlan, recipeMap),
+    [weekDays, scopedPlan, recipeMap],
   )
   const groups = groupByAisle(lines)
   const extras = state.extras.filter((e) => e.week === week)
@@ -32,7 +38,7 @@ export function Grocery() {
   const pct = totalCount ? (doneCount / totalCount) * 100 : 0
 
   const dishCount = new Set(
-    state.plan.filter((e) => weekDays.includes(e.date)).map((e) => e.recipeId),
+    scopedPlan.filter((e) => weekDays.includes(e.date)).map((e) => e.recipeId),
   ).size
 
   const copy = async () => {
@@ -58,7 +64,8 @@ export function Grocery() {
             Grocery list
           </h1>
           <p className="mt-0.5 text-[13px] text-white/45">
-            Built from everything on the plan for {rangeLabel(weekDays[0], 7)} · {dishCount} dishes
+            {scoped.length > 1 ? 'Both plans' : `${scoped[0]?.name}'s plan`} for{' '}
+            {rangeLabel(weekDays[0], 7)} · {dishCount} dishes
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -72,6 +79,10 @@ export function Grocery() {
             Uncheck all
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 print:hidden">
+        <ScopeSwitcher profiles={state.profiles} scope={state.scope} onChange={setScope} />
       </div>
 
       <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 print:hidden">

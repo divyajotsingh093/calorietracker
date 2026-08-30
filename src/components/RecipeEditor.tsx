@@ -1,10 +1,27 @@
 import { useState } from 'react'
 import { IconPlus, IconTrash } from '@/components/icons'
-import { Button, Field, Input, Modal, Select, Textarea, cx } from '@/components/ui'
+import { Button, Field, FieldGroup, Input, Modal, Select, Textarea, cx } from '@/components/ui'
 import { AISLE_ORDER } from '@/lib/grocery'
 import { SLOTS, SLOT_META } from '@/lib/slots'
 import { uid } from '@/lib/store'
-import type { Aisle, Ingredient, Recipe } from '@/types'
+import type { Aisle, Contains, Cuisine, Ingredient, Recipe } from '@/types'
+
+const CUISINES: Cuisine[] = [
+  'Indian',
+  'Asian',
+  'Middle Eastern',
+  'Italian',
+  'Continental',
+  'Mexican',
+  'Salads',
+]
+
+const CONTAINS: { id: Contains; label: string }[] = [
+  { id: 'meat', label: '🍖 Meat' },
+  { id: 'fish', label: '🐟 Fish' },
+  { id: 'egg', label: '🥚 Egg' },
+  { id: 'dairy', label: '🥛 Dairy' },
+]
 
 const EMOJIS = ['🥗', '🍲', '🍛', '🍝', '🍜', '🥘', '🍳', '🥞', '🌯', '🌮', '🍣', '🐟', '🍗', '🥩', '🍚', '🥪', '🫐', '🥑', '🍅', '🍄', '🧆', '🥕', '🍫', '🍯']
 
@@ -12,7 +29,9 @@ const EMPTY: Recipe = {
   id: '',
   name: '',
   emoji: '🥗',
+  cuisine: 'Continental',
   slots: ['dinner'],
+  contains: [],
   calories: 500,
   protein: 30,
   carbs: 50,
@@ -88,7 +107,7 @@ export function RecipeEditor({
         )}
 
         <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
-          <Field label="Icon">
+          <FieldGroup label="Icon">
             <div className="glass grid max-h-24 w-full grid-cols-8 gap-1 overflow-y-auto rounded-2xl p-2 sm:w-56">
               {EMOJIS.map((e) => (
                 <button
@@ -103,7 +122,7 @@ export function RecipeEditor({
                 </button>
               ))}
             </div>
-          </Field>
+          </FieldGroup>
           <div className="space-y-4">
             <Field label="Dish name">
               <Input
@@ -112,7 +131,7 @@ export function RecipeEditor({
                 placeholder="Miso glazed aubergine"
               />
             </Field>
-            <Field label="Meal slots">
+            <FieldGroup label="Meal slots">
               <div className="flex flex-wrap gap-2">
                 {SLOTS.map((s) => {
                   const on = draft.slots.includes(s)
@@ -135,7 +154,7 @@ export function RecipeEditor({
                   )
                 })}
               </div>
-            </Field>
+            </FieldGroup>
           </div>
         </div>
 
@@ -159,6 +178,48 @@ export function RecipeEditor({
               />
             </Field>
           ))}
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Cuisine">
+            <Select
+              value={draft.cuisine}
+              onChange={(e) => set('cuisine', e.target.value as Cuisine)}
+            >
+              {CUISINES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <FieldGroup
+            label="Contains"
+            hint="Anything with meat, fish or egg is hidden from a vegetarian's picker."
+          >
+            <div className="flex flex-wrap gap-2">
+              {CONTAINS.map((c) => {
+                const on = draft.contains.includes(c.id)
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() =>
+                      set(
+                        'contains',
+                        on ? draft.contains.filter((x) => x !== c.id) : [...draft.contains, c.id],
+                      )
+                    }
+                    className={cx(
+                      'rounded-full px-3 py-1.5 text-[13px] transition cursor-pointer',
+                      on ? 'bg-rose-400/20 text-rose-100 font-medium' : 'glass text-white/55',
+                    )}
+                  >
+                    {c.label}
+                  </button>
+                )
+              })}
+            </div>
+          </FieldGroup>
         </div>
 
         <Field label="Tags" hint="Comma separated — used by search and filters.">

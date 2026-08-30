@@ -4,13 +4,26 @@ import { RecipeEditor } from '@/components/RecipeEditor'
 import { IconClock, IconLink, IconPlus, IconSearch } from '@/components/icons'
 import { Button, Card, Chip, Empty, Input, Tag, cx } from '@/components/ui'
 import { SLOTS, SLOT_META } from '@/lib/slots'
+import { suitsDiet } from '@/lib/profiles'
 import { useStore } from '@/lib/store'
-import type { MealSlot, Recipe } from '@/types'
+import type { Cuisine, MealSlot, Recipe } from '@/types'
+
+const CUISINES: Cuisine[] = [
+  'Indian',
+  'Asian',
+  'Middle Eastern',
+  'Italian',
+  'Continental',
+  'Mexican',
+  'Salads',
+]
 
 export function Recipes() {
   const { state, saveRecipe, deleteRecipe } = useStore()
   const [q, setQ] = useState('')
   const [filter, setFilter] = useState<MealSlot | 'all' | 'mine'>('all')
+  const [cuisine, setCuisine] = useState<Cuisine | 'all'>('all')
+  const [vegOnly, setVegOnly] = useState(false)
   const [detail, setDetail] = useState<Recipe | null>(null)
   const [editing, setEditing] = useState<Recipe | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
@@ -21,15 +34,18 @@ export function Recipes() {
       .filter((r) =>
         filter === 'all' ? true : filter === 'mine' ? r.custom : r.slots.includes(filter),
       )
+      .filter((r) => cuisine === 'all' || r.cuisine === cuisine)
+      .filter((r) => !vegOnly || suitsDiet(r, 'vegetarian'))
       .filter(
         (r) =>
           !needle ||
           r.name.toLowerCase().includes(needle) ||
+          r.cuisine.toLowerCase().includes(needle) ||
           r.tags.some((t) => t.includes(needle)) ||
           r.ingredients.some((i) => i.item.includes(needle)),
       )
       .sort((a, b) => a.name.localeCompare(b.name))
-  }, [state.recipes, filter, q])
+  }, [state.recipes, filter, cuisine, vegOnly, q])
 
   const openEditor = (recipe: Recipe | null) => {
     setEditing(recipe)
@@ -44,8 +60,9 @@ export function Recipes() {
             Dish library
           </h1>
           <p className="mt-0.5 text-[13px] text-white/45">
-            {state.recipes.length} dishes · {state.recipes.filter((r) => r.custom).length} of them
-            yours
+            {shown.length} of {state.recipes.length} dishes ·{' '}
+            {state.recipes.filter((r) => suitsDiet(r, 'vegetarian')).length} suit a vegetarian,
+            egg-free diet
           </p>
         </div>
         <Button variant="primary" onClick={() => openEditor(null)}>
@@ -82,6 +99,20 @@ export function Recipes() {
         </div>
       </div>
 
+      <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+        <Chip active={cuisine === 'all'} onClick={() => setCuisine('all')}>
+          Any cuisine
+        </Chip>
+        {CUISINES.map((c) => (
+          <Chip key={c} active={cuisine === c} onClick={() => setCuisine(c)}>
+            {c}
+          </Chip>
+        ))}
+        <Chip active={vegOnly} onClick={() => setVegOnly((v) => !v)}>
+          🌿 Veg &amp; egg-free
+        </Chip>
+      </div>
+
       {shown.length ? (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {shown.map((r) => (
@@ -107,8 +138,24 @@ export function Recipes() {
                         {SLOT_META[s].emoji} {SLOT_META[s].label}
                       </span>
                     ))}
-                    {r.custom && (
+                    <span className="rounded-full bg-white/8 px-2 py-0.5 text-[11px] text-white/55">
+                      {r.cuisine}
+                    </span>
+                    {suitsDiet(r, 'vegetarian') ? (
                       <span className="rounded-full bg-lime-300/15 px-2 py-0.5 text-[11px] text-lime-200">
+                        🌿 veg
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-rose-400/12 px-2 py-0.5 text-[11px] text-rose-200/90">
+                        {r.contains.includes('meat')
+                          ? 'meat'
+                          : r.contains.includes('fish')
+                            ? 'fish'
+                            : 'egg'}
+                      </span>
+                    )}
+                    {r.custom && (
+                      <span className="rounded-full bg-white/12 px-2 py-0.5 text-[11px] text-white/70">
                         yours
                       </span>
                     )}
