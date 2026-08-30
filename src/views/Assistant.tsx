@@ -6,6 +6,7 @@ import {
   IconMic,
   IconMicOff,
   IconSend,
+  IconPlus,
   IconSettings,
   IconWave,
   IconWaveOff,
@@ -20,6 +21,8 @@ import {
   DEFAULT_CHAT_MODEL,
   assistantProvider,
   buildContext,
+  buildHabits,
+  buildMemory,
   emptyReplyNote,
   resultMessages,
   buildLibrary,
@@ -34,8 +37,8 @@ import { averages, daySeries } from '@/lib/series'
 import { dietClash } from '@/lib/profiles'
 import { useListener, useVoice } from '@/lib/speech'
 import { ACCENTS, type Accent, type ThemeMode } from '@/lib/theme'
-import { useStore, uid } from '@/lib/store'
-import type { MealSlot, PlanEntry, Profile } from '@/types'
+import { useStore } from '@/lib/store'
+import type { MealSlot, Memory, PlanEntry, Profile } from '@/types'
 
 const SLOTS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
 const TABS = ['today', 'plan', 'recipes', 'grocery', 'snap'] as const
@@ -64,7 +67,9 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
   const store = useStore()
   const { state, recipeMap, days, scoped, activeProfile } = store
 
-  const [turns, setTurns] = useState<Turn[]>([])
+  // the conversation lives in the store, so switching tabs or reloading no
+  // longer throws it away
+  const turns = state.chat
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const scroller = useRef<HTMLDivElement>(null)
@@ -262,6 +267,24 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
           return { name: call.name, detail: `Switched to ${changed.join(' and ')}`, ok: true }
         }
 
+        case 'remember': {
+          const fact = String(a.fact ?? '').trim()
+          if (!fact) return fail('Nothing to remember')
+          const m = store.remember(fact, 'nova')
+          if (!m) return fail('Nothing to remember')
+          return { name: call.name, detail: `Remembered: ${m.text}`, ok: true }
+        }
+
+        case 'forget': {
+          const needle = String(a.fact ?? '').trim().toLowerCase()
+          const hit = state.memories.find(
+            (m) => m.text.toLowerCase().includes(needle) || needle.includes(m.text.toLowerCase()),
+          )
+          if (!needle || !hit) return fail('Nothing matching that is remembered')
+          store.forget(hit.id)
+          return { name: call.name, detail: `Forgot: ${hit.text}`, ok: true }
+        }
+
         case 'add_to_shopping_list': {
           const item = String(a.item ?? '').trim()
           if (!item) return fail('No item given')
@@ -278,7 +301,7 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
           return fail(`Unknown tool ${call.name}`)
       }
     },
-    [findProfiles, onNavigate, recipeMap, state.plan, state.profiles, store, theme, today],
+    [findProfiles, onNavigate, recipeMap, state.memories, state.plan, state.profiles, store, theme, today],
   )
 
   /* ─────────── the turn ─────────── */
@@ -288,12 +311,11 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
       const question = raw.trim()
       if (!question || busy) return
       setDraft('')
-      const mine: Turn = { id: uid(), role: 'user', text: question }
-      setTurns((t) => [...t, mine])
+      store.addTurn({ role: 'user', text: question })
 
       if (!provider) {
         const text = answerLocally(question, state, recipeMap, scoped)
-        setTurns((t) => [...t, { id: uid(), role: 'assistant', text, local: true }])
+        store.addTurn({ role: 'assistant', text, local: true })
         voice.speak(text)
         return
       }
@@ -304,6 +326,8 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
         '',
         '# Current state',
         buildContext(state, recipeMap, days),
+        buildMemory(state.memories),
+        buildHabits(state, recipeMap, state.profiles),
         '',
         '# Dish library — id | name | cuisine | slots | macros | portion | diet',
         buildLibrary(state.recipes),
@@ -341,32 +365,24 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
         }
 
         const text = reply.text || emptyReplyNote(reply, done)
-        setTurns((t) => [
-          ...t,
-          {
-            id: uid(),
-            role: 'assistant',
-            text,
-            actions: done.length ? done : undefined,
-            error: !reply.text && !done.length,
-          },
-        ])
+        store.addTurn({
+          role: 'assistant',
+          text,
+          actions: done.length ? done : undefined,
+          error: !reply.text && !done.length,
+        })
         voice.speak(text)
       } catch (err) {
-        setTurns((t) => [
-          ...t,
-          {
-            id: uid(),
-            role: 'assistant',
-            text: err instanceof Error ? err.message : 'That request did not go through.',
-            error: true,
-          },
-        ])
+        store.addTurn({
+          role: 'assistant',
+          text: err instanceof Error ? err.message : 'That request did not go through.',
+          error: true,
+        })
       } finally {
         setBusy(false)
       }
     },
-    [busy, days, provider, recipeMap, runTool, scoped, state, turns, voice],
+    [busy, days, provider, recipeMap, runTool, scoped, state, store, turns, voice],
   )
 
   const listener = useListener((text) => void send(text))
@@ -469,7 +485,7 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
               </HudButton>
             )}
             {turns.length > 0 && (
-              <HudButton label="Clear conversation" onClick={() => setTurns([])}>
+              <HudButton label="Clear conversation" onClick={store.clearChat}>
                 <IconX width={17} height={17} />
               </HudButton>
             )}
@@ -672,6 +688,12 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
                 </section>
               )
             })}
+
+            <Memories
+              memories={state.memories}
+              onAdd={(t) => store.remember(t, 'you')}
+              onForget={store.forget}
+            />
           </aside>
         </div>
       </div>
@@ -790,5 +812,93 @@ function Bubble({ turn, fresh }: { turn: Turn; fresh: boolean }) {
         ) : null}
       </div>
     </div>
+  )
+}
+
+/**
+ * What NOVA has learned, in plain sentences you can delete.
+ *
+ * Memory that cannot be inspected is memory you cannot correct, and an
+ * assistant acting on a belief you never got to see is worse than one that
+ * forgets everything. Habits are derived from the plan each turn and are
+ * deliberately absent here — there is nothing to edit, only the plan itself.
+ */
+function Memories({
+  memories,
+  onAdd,
+  onForget,
+}: {
+  memories: Memory[]
+  onAdd: (text: string) => void
+  onForget: (id: string) => void
+}) {
+  const [draft, setDraft] = useState('')
+  return (
+    <section className="hud-frame px-3 py-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="hud-label">What NOVA remembers</span>
+        <span className="hud-num text-[0.625rem] text-[var(--hud-faint)]">
+          {memories.length}
+        </span>
+      </div>
+
+      {memories.length ? (
+        <ul className="mb-2.5 space-y-1.5">
+          {memories.map((m) => (
+            <li key={m.id} className="flex items-start gap-2">
+              <span
+                aria-hidden
+                className="mt-[6px] size-1.5 shrink-0 rounded-full"
+                style={{
+                  background: m.source === 'you' ? 'var(--hud-cyan)' : 'var(--hud-violet)',
+                }}
+              />
+              <span className="hud-num min-w-0 flex-1 text-[0.75rem] leading-snug text-[var(--hud-soft)]">
+                {m.text}
+              </span>
+              <button
+                type="button"
+                onClick={() => onForget(m.id)}
+                aria-label={`Forget: ${m.text}`}
+                className="press shrink-0 cursor-pointer rounded p-0.5 text-[var(--hud-faint)] hover:text-[var(--hud-amber)]"
+              >
+                <IconX width={13} height={13} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="hud-num mb-2.5 text-[0.75rem] leading-snug text-[var(--hud-faint)]">
+          Nothing yet. Tell NOVA something durable — a dislike, an allergy, how you
+          shop — and it will keep it for later conversations.
+        </p>
+      )}
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!draft.trim()) return
+          onAdd(draft)
+          setDraft('')
+        }}
+        className="flex gap-1.5"
+      >
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Add something to remember…"
+          aria-label="Add a memory"
+          className="hud-num min-w-0 flex-1 rounded-lg border border-[var(--hud-line-soft)] bg-transparent px-2 py-1.5 text-[0.75rem] text-[var(--hud-ink)] outline-none placeholder:text-[var(--hud-faint)]"
+        />
+        <button
+          type="submit"
+          disabled={!draft.trim()}
+          aria-label="Remember this"
+          className="press grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg border border-[var(--hud-line-soft)] text-[var(--hud-cyan)] disabled:cursor-not-allowed disabled:opacity-35"
+        >
+          <IconPlus width={14} height={14} />
+        </button>
+      </form>
+    </section>
   )
 }

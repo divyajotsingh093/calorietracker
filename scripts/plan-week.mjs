@@ -106,8 +106,19 @@ for (const d of days) {
   d.hist = CUISINES.map(() => 0)
   for (const x of d.picks) d.hist[CI[x.cu]]++
   d.ids = d.picks.map((x) => x.id)
+  // the three meals, on both plates — Dj's swap counts as a repeat too
+  d.mains = [...new Set([...d.picks.slice(0, 3).map((x) => x.id), ...d.dj.map((x) => x.id)])]
+  d.key = d.ids.slice().sort().join('|')
 }
-const pick = (a) => a[(Math.random() * a.length) | 0]
+/** Fisher-Yates, so a level's candidates are tried in a different order each run. */
+const shuffle = (a) => {
+  const c = a.slice()
+  for (let i = c.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0
+    ;[c[i], c[j]] = [c[j], c[i]]
+  }
+  return c
+}
 
 /**
  * Seven days out of the acceptable set, by backtracking rather than by luck.
@@ -122,94 +133,177 @@ const pick = (a) => a[(Math.random() * a.length) | 0]
 // Week-level shape. A dish may show up three times in seven days: the dishes
 // that carry the protein are a small set, and a cap of two makes the seventh
 // day unplaceable rather than making the week more varied.
+// Week-level shape. A dish may show up three times in one week: the dishes that
+// carry the protein are a small set, and a cap of two makes the seventh day
+// unplaceable rather than making the week more varied.
 const MINC = 3, MAXC = 8, MAXUSE = 3
-function pickWeek(budget = 60000) {
-  const used = new Map()
-  const tally = CUISINES.map(() => 0)
+
+/**
+ * Fourteen days in one search, not two weeks in a row.
+ *
+ * The fortnight has to satisfy something no single week does: a main served in
+ * week one may not come back in week two. Planning week one first and then
+ * banning its cast never works — week one takes the twenty-odd mains that make
+ * the protein targets reachable and leaves week two nothing. Searching both at
+ * once lets the walk back out of a week-one choice when week two dead-ends.
+ *
+ * Snacks are exempt from the no-repeat rule on purpose. Hitting 110 g and 140 g
+ * of protein inside the calorie ceilings leans on a handful of protein-dense
+ * snacks that appear in almost every qualifying day; banning those across weeks
+ * leaves exactly zero valid days. Repeating edamame across a fortnight is not
+ * what "don't repeat" is asking about.
+ */
+
+const ALL_DAYS = days
+const SAMPLE = 1400
+
+function pickFortnight(budget = 20000) {
+  // Sample the pool per attempt. Filtering all 2787 acceptable days at every
+  // node is the whole cost of the search; 700 keeps plenty of variety, and a
+  // fresh sample each restart explores the rest.
+  const days = SAMPLE > ALL_DAYS.length ? ALL_DAYS : shuffle(ALL_DAYS).slice(0, SAMPLE)
+  // uses are counted per week, so a dish may appear three times in week one and
+  // three times in week two without the two totals fighting each other
+  const used = [new Map(), new Map()]
+  const weekOf = new Map()        // main id -> 0 | 1, the week that owns it
+  const tally = [CUISINES.map(() => 0), CUISINES.map(() => 0)]
   const chosen = []
+  const seen = new Set()
   let spent = 0
 
   const pinnedDays = Object.fromEntries(
-    PINNED.map(([id]) => [id, days.filter((d) => d.ids.includes(id))]),
+    PINNED.map(([id]) => [id, ALL_DAYS.filter((d) => d.ids.includes(id))]),
   )
+  const pinnedMet = () =>
+    PINNED.every(([id, n]) => {
+      const w = weekOf.get(id)
+      return w !== undefined && (used[w].get(id) ?? 0) >= n
+    })
 
   const search = (d) => {
-    if (d === 7) {
-      if (Math.min(...tally) < MINC || Math.max(...tally) > MAXC) return null
-      for (const [id, n] of PINNED) if ((used.get(id) ?? 0) < n) return null
-      return { chosen: chosen.slice(), tally: Object.fromEntries(CUISINES.map((c, i) => [c, tally[i]])),
-        score: Math.max(...tally) - Math.min(...tally) }
+    if (d === 14) {
+      for (const ww of [0, 1]) {
+        if (Math.min(...tally[ww]) < MINC || Math.max(...tally[ww]) > MAXC) return null
+      }
+      if (!pinnedMet()) return null
+      return chosen.slice()
     }
-    // 5 meals a day, so each remaining day can add at most 5 to one cuisine
-    const left = 7 - d
-    for (let i = 0; i < tally.length; i++) if (tally[i] + left * 5 < MINC) return null
+
+    const w = d < 7 ? 0 : 1
+    const left = (w === 0 ? 7 : 14) - d
+    // Every cuisine still short needs slots, and the days left can supply only
+    // five meals each. Checking the cuisines one at a time lets the walk reach
+    // day 14 with one of them still on zero; the sum is the real bound.
+    let deficit = 0
+    for (let i = 0; i < tally[w].length; i++) deficit += Math.max(0, MINC - tally[w][i])
+    if (deficit > left * 5) return null
 
     const prev = chosen[d - 1]
-    // front-load the pinned dishes: they sit in few acceptable days, so leaving
-    // them to chance means never drawing one
+    // the pinned dish sits in few acceptable days, so leaving it to chance means
+    // never drawing one; it belongs to whichever week claims it first
     let pool = days
     for (const [id, n] of PINNED) {
-      if ((used.get(id) ?? 0) < n && 7 - d <= n - (used.get(id) ?? 0) + 1) {
+      const owner = weekOf.get(id)
+      if (owner !== undefined && owner !== w) continue
+      const have = used[w].get(id) ?? 0
+      if (have < n && left <= n - have + 1) {
         pool = pinnedDays[id]
         break
       }
     }
     if (!pool.length) return null
-    let tried = 0
-    while (tried < 8) {
-      if (spent++ > budget) return null
-      const cand = pick(pool)
-      if (cand.ids.some((id) => (used.get(id) ?? 0) >= MAXUSE)) continue
-      // nothing two days running — a plan that repeats itself reads as lazy
-      if (prev && cand.ids.some((id) => prev.ids.includes(id))) continue
-      let over = false
-      for (let i = 0; i < tally.length; i++) if (tally[i] + cand.hist[i] > MAXC) { over = true; break }
-      if (over) continue
-      tried++
 
-      cand.ids.forEach((id) => used.set(id, (used.get(id) ?? 0) + 1))
-      for (let i = 0; i < tally.length; i++) tally[i] += cand.hist[i]
+    // Filter the pool rather than rejection-sampling it. By the back half of
+    // week two almost every random day violates the one-week rule, so drawing
+    // at random burns the whole budget on rejects and never reaches depth 14.
+    const feasible = pool.filter((cand) => {
+      // no day repeated anywhere in the fortnight — "nothing two days running"
+      // still let Monday come back on Wednesday, identical down to the snacks
+      if (seen.has(cand.key)) return false
+      if (cand.mains.some((id) => (weekOf.get(id) ?? w) !== w)) return false
+      if (cand.ids.some((id) => (used[w].get(id) ?? 0) >= MAXUSE)) return false
+      if (prev && cand.ids.some((id) => prev.ids.includes(id))) return false
+      for (let i = 0; i < tally[w].length; i++)
+        if (tally[w][i] + cand.hist[i] > MAXC) return false
+      return true
+    })
+    if (!feasible.length) return null
+
+    // Prefer days that cover a cuisine still short. Random order alone leaves
+    // the last cuisine to luck, and by then there is no room for it.
+    const short = new Set()
+    for (let i = 0; i < tally[w].length; i++) if (tally[w][i] < MINC) short.add(i)
+    const cover = (c) => (short.size ? c.hist.reduce((n, v, i) => n + (v && short.has(i) ? 1 : 0), 0) : 0)
+    const order = shuffle(feasible)
+      .sort((a, b) => cover(b) - cover(a))
+      .slice(0, 6)
+    for (const cand of order) {
+      if (spent++ > budget) return null
+
+      const claimed = cand.mains.filter((id) => !weekOf.has(id))
+      claimed.forEach((id) => weekOf.set(id, w))
+      cand.ids.forEach((id) => used[w].set(id, (used[w].get(id) ?? 0) + 1))
+      for (let i = 0; i < tally[w].length; i++) tally[w][i] += cand.hist[i]
       chosen.push(cand)
+      seen.add(cand.key)
 
       const out = search(d + 1)
       if (out) return out
 
       chosen.pop()
-      for (let i = 0; i < tally.length; i++) tally[i] -= cand.hist[i]
-      cand.ids.forEach((id) => used.set(id, used.get(id) - 1))
+      seen.delete(cand.key)
+      for (let i = 0; i < tally[w].length; i++) tally[w][i] -= cand.hist[i]
+      cand.ids.forEach((id) => used[w].set(id, used[w].get(id) - 1))
+      claimed.forEach((id) => weekOf.delete(id))
     }
     return null
   }
+
   return search(0)
 }
 
-let best = null
-for (let i = 0; i < 200; i++) {
-  const w = pickWeek()
-  if (w && (!best || w.score < best.score)) best = w
-  if (best && best.score <= 3) break
+let fortnight = null
+for (let i = 0; i < 150 && !fortnight; i++) fortnight = pickFortnight()
+if (!fortnight) {
+  console.error(`could not plan a fortnight with no repeated meal`)
+  process.exit(1)
 }
-if (!best) { console.error('no week satisfied the week-level constraints'); process.exit(1) }
 
-const names = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-console.error('\nday   Ruchi kcal/prot/fibre    Dj kcal/prot/fibre')
-best.chosen.forEach((d, i) =>
-  console.error(`${names[i]}   ${d.rk} / ${Math.round(d.rp)} / ${Math.round(d.rf)}         ${d.dk} / ${Math.round(d.dp)} / ${Math.round(d.df)}`))
-const avg = (k) => Math.round(best.chosen.reduce((s, d) => s + d[k], 0) / 7)
-console.error(`AVG   ${avg('rk')} / ${avg('rp')} / ${avg('rf')}         ${avg('dk')} / ${avg('dp')} / ${avg('df')}`)
-console.error('\ncuisine spread (Ruchi): ' + JSON.stringify(best.tally))
+const weeks = [fortnight.slice(0, 7), fortnight.slice(7)]
+const mainsOf = (w) => new Set(w.flatMap((d) => d.mains))
 
-const q = (s) => `'${s}'`
-const pair = (r, d) => (r.id === d.id ? q(r.id) : `[${q(r.id)}, ${q(d.id)}]`)
-console.log('const WEEK: DaySpec[] = [')
-best.chosen.forEach((d, i) => {
-  const [b, l, dn, s1, s2] = d.picks
-  const cu = [...new Set(d.picks.map((x) => x.cu))].join(' / ')
-  console.log(`  {\n    // ${names[i]} — ${cu}`)
-  console.log(`    breakfast: ${pair(b, d.dj[0])},`)
-  console.log(`    lunch: ${pair(l, d.dj[1])},`)
-  console.log(`    dinner: ${pair(dn, d.dj[2])},`)
-  console.log(`    snack: [${q(s1.id)}, ${q(s2.id)}],`)
-  console.log('  },')
+const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const q = (v) => `'${v}'`
+const pairOf = (r, d) => (r.id === d.id ? q(r.id) : `[${q(r.id)}, ${q(d.id)}]`)
+
+weeks.forEach((week, w) => {
+  console.error(`\n===== week ${w + 1} =====`)
+  console.error('day   Ruchi kcal/prot/fibre    Dj kcal/prot/fibre')
+  week.forEach((d, i) =>
+    console.error(`${names[i]}   ${d.rk} / ${Math.round(d.rp)} / ${Math.round(d.rf)}         ${d.dk} / ${Math.round(d.dp)} / ${Math.round(d.df)}`))
+  const avg = (k) => Math.round(week.reduce((s, d) => s + d[k], 0) / 7)
+  console.error(`AVG   ${avg('rk')} / ${avg('rp')} / ${avg('rf')}         ${avg('dk')} / ${avg('dp')} / ${avg('df')}`)
+  const t = Object.fromEntries(CUISINES.map((c) => [c, 0]))
+  for (const d of week) for (const x of d.picks) t[x.cu]++
+  console.error('cuisine spread (Ruchi): ' + JSON.stringify(t))
 })
-console.log(']')
+
+const shared = [...mainsOf(weeks[0])].filter((id) => mainsOf(weeks[1]).has(id))
+console.error(`\nmeals served in both weeks: ${shared.length}${shared.length ? ' — ' + shared.join(', ') : ''}`)
+console.error(`distinct mains across the fortnight: ${new Set([...mainsOf(weeks[0]), ...mainsOf(weeks[1])]).size}`)
+
+weeks.forEach((week, w) => {
+  console.log(`const WEEK${w + 1}: DaySpec[] = [`)
+  week.forEach((d, i) => {
+    const [b, l, dn, s1, s2] = d.picks
+    const cu = [...new Set(d.picks.map((x) => x.cu))].join(' / ')
+    console.log(`  {\n    // ${names[i]} — ${cu}`)
+    console.log(`    breakfast: ${pairOf(b, d.dj[0])},`)
+    console.log(`    lunch: ${pairOf(l, d.dj[1])},`)
+    console.log(`    dinner: ${pairOf(dn, d.dj[2])},`)
+    console.log(`    snack: [${q(s1.id)}, ${q(s2.id)}],`)
+    console.log('  },')
+  })
+  console.log(']')
+  if (w === 0) console.log('')
+})

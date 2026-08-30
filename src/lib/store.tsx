@@ -15,7 +15,9 @@ import { DEFAULT_CHAT_MODEL } from '@/lib/assistant'
 import { DEFAULT_OPENROUTER_MODEL } from '@/lib/vision'
 import type {
   AppState,
+  ChatTurn,
   MealSlot,
+  Memory,
   PhotoLog,
   PlanEntry,
   Profile,
@@ -26,6 +28,14 @@ import type {
 
 const KEY = 'nourish.state.v2'
 const VERSION = 3
+
+/**
+ * How much of the NOVA conversation is kept. Everything lives in one
+ * localStorage entry alongside the plan and any photo logs, and photos are the
+ * expensive part of that budget, so the transcript gets a hard ceiling rather
+ * than growing until a save silently fails.
+ */
+const CHAT_CAP = 80
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 
@@ -48,67 +58,126 @@ interface DaySpec {
 }
 
 /**
- * A starter week, Monday first, chosen by `scripts/plan-week.mjs` rather than by
- * eye: every day clears its protein target inside its calorie budget, carries
- * at least 30 g of fibre, spans at least three cuisines, repeats nothing from
- * the day before, and keeps Ruchi's column strictly vegetarian and egg-free.
- * Dj eats the same food except where a meat or fish sibling is the natural swap.
+ * The starter fortnight, Monday first, searched by `scripts/plan-week.mjs`
+ * rather than chosen by eye. Every day clears its protein target inside its
+ * calorie budget, carries at least 30 g of fibre, spans at least three cuisines,
+ * repeats nothing from the day before, and keeps Ruchi's column strictly
+ * vegetarian and egg-free. Dj eats the same food except where a meat or fish
+ * sibling is the natural swap.
  *
- * The seed yoghurt bowl is pinned to two mornings — it is what they actually
- * eat, and a plan that optimises it away is answering the wrong question.
+ * The two weeks share no meal at all: a breakfast, lunch or dinner served in
+ * week one never comes back in week two, on either plate. Snacks do recur —
+ * the protein-dense ones are what make 110 g and 140 g reachable inside the
+ * calorie ceilings, and banning them across weeks leaves no valid days at all.
  *
- * As seeded: Ruchi averages 1807 kcal with 110 g protein and 54 g fibre;
- * Dj averages 1892 kcal with 141 g protein and 49 g fibre.
+ * The seed yoghurt bowl is pinned to two mornings of whichever week claims it —
+ * it is what they actually eat, and a plan that optimises it away is answering
+ * the wrong question.
+ *
+ * As seeded — week 1: Ruchi 1818 kcal / 111 g protein / 50 g fibre, Dj 1913 /
+ * 140 / 45. Week 2: Ruchi 1835 / 112 / 53, Dj 1883 / 144 / 46.
  */
-const WEEK: DaySpec[] = [
+const WEEK1: DaySpec[] = [
   {
-    // Mon — Continental / Indian / Middle Eastern / Asian
-    breakfast: 'r-smoothie-bowl',
-    lunch: 'r-soya-keema',
-    dinner: ['r-stuffed-peppers', 'r-chicken-shawarma'],
-    snack: ['r-edamame', 'r-berry-protein-smoothie'],
-  },
-  {
-    // Tue — Indian / Mexican / Salads / Italian
+    // Mon — Indian / Mexican / Asian / Salads / Middle Eastern
     breakfast: 'r-dhokla',
-    lunch: ['r-palak-paneer', 'r-chicken-tikka-masala'],
-    dinner: ['r-black-bean-soup', 'r-chicken-burrito-bowl'],
-    snack: ['r-sesame-slaw', 'r-white-bean-dip'],
+    lunch: ['r-black-bean-soup', 'r-chicken-burrito-bowl'],
+    dinner: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
+    snack: ['r-sesame-slaw', 'r-labneh-zaatar'],
   },
   {
-    // Wed — Continental / Asian / Middle Eastern / Mexican
-    breakfast: 'r-overnight-oats',
-    lunch: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
-    dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
-    snack: ['r-tzatziki', 'r-black-bean-dip'],
-  },
-  {
-    // Thu — Continental / Salads / Middle Eastern / Asian / Italian
-    breakfast: 'r-seed-yogurt-bowl',
-    lunch: 'r-sesame-slaw',
-    dinner: ['r-stuffed-peppers', 'r-chicken-shawarma'],
-    snack: ['r-edamame', 'r-bruschetta'],
-  },
-  {
-    // Fri — Indian / Asian / Middle Eastern / Continental
+    // Tue — Indian / Asian / Middle Eastern / Continental / Mexican
     breakfast: ['r-paneer-bhurji', 'r-menemen'],
     lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
     dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
-    snack: ['r-berry-protein-smoothie', 'r-moong-chaat'],
+    snack: ['r-berry-protein-smoothie', 'r-black-bean-dip'],
   },
   {
-    // Sat — Continental / Salads / Asian / Mexican
+    // Wed — Continental / Salads / Middle Eastern / Asian / Italian
     breakfast: 'r-seed-yogurt-bowl',
     lunch: 'r-sesame-slaw',
-    dinner: ['r-chickpea-halloumi-salad', 'r-souvlaki-bowl'],
-    snack: ['r-edamame', 'r-guacamole'],
+    dinner: ['r-mujadara', 'r-chicken-shawarma'],
+    snack: ['r-edamame', 'r-white-bean-dip'],
   },
   {
-    // Sun — Asian / Middle Eastern / Italian / Mexican
-    breakfast: 'r-congee',
+    // Thu — Continental / Middle Eastern / Asian / Mexican / Indian
+    breakfast: 'r-overnight-oats',
+    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
+    dinner: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
+    snack: ['r-black-bean-dip', 'r-moong-chaat'],
+  },
+  {
+    // Fri — Indian / Italian / Asian / Salads / Middle Eastern
+    breakfast: 'r-dhokla',
+    lunch: ['r-pesto-gnocchi', 'r-turkey-meatballs'],
+    dinner: ['r-tempeh-stirfry', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-sesame-slaw', 'r-tzatziki'],
+  },
+  {
+    // Sat — Continental / Asian / Indian
+    breakfast: 'r-seed-yogurt-bowl',
+    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
+    dinner: ['r-chana-masala', 'r-goan-fish-curry'],
+    snack: ['r-edamame', 'r-moong-chaat'],
+  },
+  {
+    // Sun — Continental / Asian / Middle Eastern / Italian
+    breakfast: 'r-yoghurt-parfait',
     lunch: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
-    dinner: ['r-stuffed-peppers', 'r-chicken-shawarma'],
-    snack: ['r-white-bean-dip', 'r-black-bean-dip'],
+    dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
+    snack: ['r-berry-protein-smoothie', 'r-white-bean-dip'],
+  },
+]
+
+const WEEK2: DaySpec[] = [
+  {
+    // Mon — Asian / Middle Eastern / Italian / Salads / Mexican
+    breakfast: 'r-congee',
+    lunch: ['r-fattoush-halloumi', 'r-harissa-prawns'],
+    dinner: ['r-minestrone', 'r-tuna-puttanesca'],
+    snack: ['r-sesame-slaw', 'r-black-bean-dip'],
+  },
+  {
+    // Tue — Indian / Mexican / Asian / Continental
+    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
+    lunch: 'r-soya-keema',
+    dinner: ['r-sweet-potato-tacos', 'r-fish-tacos'],
+    snack: ['r-edamame', 'r-berry-protein-smoothie'],
+  },
+  {
+    // Wed — Asian / Middle Eastern / Italian / Salads
+    breakfast: 'r-congee',
+    lunch: ['r-fattoush-halloumi', 'r-harissa-prawns'],
+    dinner: ['r-minestrone', 'r-tuna-puttanesca'],
+    snack: ['r-sesame-slaw', 'r-white-bean-dip'],
+  },
+  {
+    // Thu — Indian / Continental / Mexican
+    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
+    lunch: ['r-dal-tadka', 'r-chicken-tikka-masala'],
+    dinner: 'r-soya-keema',
+    snack: ['r-berry-protein-smoothie', 'r-black-bean-dip'],
+  },
+  {
+    // Fri — Continental / Asian / Indian / Middle Eastern
+    breakfast: 'r-smoothie-bowl',
+    lunch: ['r-tofu-pad-thai', 'r-tuna-poke'],
+    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
+    snack: ['r-edamame', 'r-tzatziki'],
+  },
+  {
+    // Sat — Asian / Indian / Mexican / Salads
+    breakfast: 'r-congee',
+    lunch: 'r-soya-keema',
+    dinner: ['r-sweet-potato-tacos', 'r-fish-tacos'],
+    snack: ['r-sesame-slaw', 'r-black-bean-dip'],
+  },
+  {
+    // Sun — Indian / Italian / Asian / Middle Eastern
+    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
+    lunch: ['r-minestrone', 'r-tuna-puttanesca'],
+    dinner: ['r-tofu-pad-thai', 'r-tuna-poke'],
+    snack: ['r-edamame', 'r-tzatziki'],
   },
 ]
 
@@ -120,7 +189,7 @@ function seedPlan(anchor: string, profiles: Profile[]): PlanEntry[] {
       entries.push({ id: uid(), profileId: profile.id, date, slot, recipeId, servings: 1, eaten: false })
     })
   }
-  WEEK.forEach((day, i) => {
+  ;[...WEEK1, ...WEEK2].forEach((day, i) => {
     const date = addDays(anchor, i)
     push(date, 'breakfast', day.breakfast)
     push(date, 'lunch', day.lunch)
@@ -143,6 +212,8 @@ function freshState(): AppState {
     anchor,
     checked: [],
     extras: [],
+    chat: [],
+    memories: [],
   }
 }
 
@@ -181,6 +252,10 @@ function load(): AppState {
       anchor: parsed.anchor ?? base.anchor,
       checked: parsed.checked ?? [],
       extras: parsed.extras ?? [],
+      // the conversation is capped on write; trim again on read in case an
+      // older save carries more than the cap
+      chat: (parsed.chat ?? []).slice(-CHAT_CAP),
+      memories: parsed.memories ?? [],
     }
   } catch {
     return freshState()
@@ -224,6 +299,12 @@ interface Store {
   clearChecked: (week: number) => void
   addExtra: (week: number, text: string) => void
   removeExtra: (id: string) => void
+  /** append one turn to the NOVA conversation */
+  addTurn: (turn: Omit<ChatTurn, 'id' | 'at'>) => ChatTurn
+  clearChat: () => void
+  remember: (text: string, source?: Memory['source']) => Memory | null
+  forget: (id: string) => void
+  clearMemories: () => void
   resetAll: () => void
   importState: (raw: string) => boolean
 }
@@ -417,6 +498,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         patch((s) => ({ ...s, extras: [...s.extras, { id: uid(), week, text }] })),
 
       removeExtra: (id) => patch((s) => ({ ...s, extras: s.extras.filter((e) => e.id !== id) })),
+
+      addTurn: (turn) => {
+        const full: ChatTurn = { ...turn, id: uid(), at: Date.now() }
+        patch((s) => ({ ...s, chat: [...s.chat, full].slice(-CHAT_CAP) }))
+        return full
+      },
+      clearChat: () => patch((s) => ({ ...s, chat: [] })),
+
+      remember: (text, source = 'nova') => {
+        const clean = text.trim().slice(0, 240)
+        if (!clean) return null
+        // a memory NOVA keeps re-noticing should not pile up as duplicates
+        const dupe = state.memories.find(
+          (m) => m.text.toLowerCase() === clean.toLowerCase(),
+        )
+        if (dupe) return dupe
+        const m: Memory = { id: uid(), text: clean, source, createdAt: Date.now() }
+        patch((s) => ({ ...s, memories: [...s.memories, m].slice(-40) }))
+        return m
+      },
+      forget: (id) => patch((s) => ({ ...s, memories: s.memories.filter((m) => m.id !== id) })),
+      clearMemories: () => patch((s) => ({ ...s, memories: [] })),
 
       resetAll: () => {
         localStorage.removeItem(KEY)

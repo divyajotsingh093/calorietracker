@@ -2,7 +2,7 @@ import { AISLE_ORDER } from '@/lib/grocery'
 import { dayTotals, macroSplit } from '@/lib/nutrition'
 import { longDate, todayISO } from '@/lib/date'
 import { suitsDiet } from '@/lib/profiles'
-import type { AppState, MealSlot, Profile, Recipe, Settings } from '@/types'
+import type { AppState, MealSlot, Memory, Profile, Recipe, Settings } from '@/types'
 
 export type Role = 'user' | 'assistant'
 
@@ -92,6 +92,71 @@ export function buildContext(
   return lines.join('\n')
 }
 
+/**
+ * What NOVA has been told to remember, and what it can work out for itself.
+ *
+ * Two different kinds of learning, kept separate on purpose. Memories are
+ * things somebody said — a dislike, an allergy, a habit — and they only exist
+ * because a person or the assistant wrote them down, so they are listed as
+ * plain sentences the user can read and delete. Habits are read off the plan
+ * every turn: no storage, no drift, and no chance of the assistant believing
+ * something the data stopped supporting weeks ago.
+ */
+export function buildMemory(memories: Memory[]): string {
+  if (!memories.length) return ''
+  return [
+    '',
+    '# What you have been told to remember',
+    ...memories.map((m) => `- ${m.text}`),
+    'Use these. If one turns out to be wrong, call forget and say so.',
+  ].join('\n')
+}
+
+/** Habits read straight off the plan — never stored, so they cannot go stale. */
+export function buildHabits(
+  state: AppState,
+  recipes: Map<string, Recipe>,
+  profiles: Profile[],
+): string {
+  const lines: string[] = []
+
+  for (const p of profiles) {
+    const mine = state.plan.filter((e) => e.profileId === p.id)
+    if (mine.length < 4) continue
+
+    const count = new Map<string, number>()
+    for (const e of mine) count.set(e.recipeId, (count.get(e.recipeId) ?? 0) + 1)
+    const top = [...count.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([id, n]) => `${recipes.get(id)?.name ?? id} (${n}x)`)
+
+    // planned but never ticked off is the useful signal — it is the difference
+    // between what they meant to eat and what they actually did
+    const skipped = [...count.keys()].filter((id) => {
+      const all = mine.filter((e) => e.recipeId === id)
+      return all.length >= 2 && all.every((e) => !e.eaten)
+    })
+    const ticked = mine.filter((e) => e.eaten).length
+
+    lines.push(`${p.name}: most planned — ${top.join(', ')}.`)
+    if (ticked)
+      lines.push(`  ${ticked} of ${mine.length} planned meals ticked off so far.`)
+    if (skipped.length)
+      lines.push(
+        `  planned repeatedly but never ticked: ${skipped
+          .map((id) => recipes.get(id)?.name ?? id)
+          .slice(0, 4)
+          .join(', ')} — worth asking whether they actually like it.`,
+      )
+  }
+
+  const logged = state.photos.length
+  if (logged) lines.push(`${logged} meals logged outside the plan.`)
+
+  return lines.length ? ['', '# What the plan shows about them', ...lines].join('\n') : ''
+}
+
 /** A one-line-per-dish index, so the model recommends real dishes by real id. */
 export function buildLibrary(recipes: Recipe[]): string {
   return recipes
@@ -113,6 +178,7 @@ How to answer:
 - You run this app. When the person asks for a change — log a meal, plan or drop a dish, tick something off, copy or clear a day or a week, move a goal, switch whose plan is showing, open another screen, change the theme, add to the shopping list — call the matching tool. Never answer with instructions for doing it by hand, and never claim to have done something you did not call a tool for.
 - After the tools run you are shown what actually happened. Say it in one line. If something was refused, say why in plain words.
 - Always write a reply. A turn that calls a tool and then says nothing is a failure.
+- When they tell you something durable about how they eat — a dislike, an allergy, a routine, a standing preference — call remember with one short sentence. Do not remember what they ate today, and never remember something they did not say.
 - If a request is ambiguous about who it is for, and only one person is in view, assume that person. Otherwise ask.
 - Portions matter: quote the serving weight when you recommend a dish.
 - No preamble, no "certainly", no restating the question.`
@@ -274,6 +340,27 @@ export const TOOLS: ToolSpec[] = [
         mode: { type: 'string', enum: ['light', 'dark', 'system'] },
         accent: { type: 'string', enum: ['matcha', 'citrus', 'berry', 'ocean', 'grape'] },
       },
+    },
+  },
+  {
+    name: 'remember',
+    description:
+      'Store something durable about the household so later conversations know it — a dislike, an allergy, a routine, a standing preference. One short sentence. Do not store one-off facts like what they ate today, and do not store anything they did not actually tell you.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        fact: { type: 'string', description: 'one sentence, e.g. "Ruchi does not eat mushrooms"' },
+      },
+      required: ['fact'],
+    },
+  },
+  {
+    name: 'forget',
+    description: 'Drop something you were remembering, when it turns out to be wrong or out of date.',
+    input_schema: {
+      type: 'object',
+      properties: { fact: { type: 'string', description: 'the remembered line, or enough of it to match' } },
+      required: ['fact'],
     },
   },
   {

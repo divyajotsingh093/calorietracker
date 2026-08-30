@@ -135,6 +135,33 @@ export interface Settings {
 /** Which profile the app is currently showing. */
 export type Scope = string | 'both'
 
+/** One line of a NOVA conversation, kept so the thread survives a reload. */
+export interface ChatTurn {
+  id: string
+  role: 'user' | 'assistant'
+  text: string
+  /** what the model actually changed on this turn */
+  actions?: { name: string; detail: string; ok: boolean }[]
+  /** the reply came from the on-device engine, not a model */
+  local?: boolean
+  error?: boolean
+  at: number
+}
+
+/**
+ * Something NOVA has been told to remember, carried into every later
+ * conversation. Kept as plain sentences the user can read and delete, rather
+ * than an opaque embedding — if the assistant is going to act on a belief about
+ * the household, that belief has to be inspectable.
+ */
+export interface Memory {
+  id: string
+  text: string
+  /** who put it there: NOVA noticed it, or you typed it */
+  source: 'nova' | 'you'
+  createdAt: number
+}
+
 export interface AppState {
   version: number
   settings: Settings
@@ -149,4 +176,8 @@ export interface AppState {
   checked: string[]
   /** Extra one-off grocery items, keyed by week index */
   extras: { id: string; week: number; text: string }[]
+  /** the running NOVA conversation */
+  chat: ChatTurn[]
+  /** what NOVA has learned about the household */
+  memories: Memory[]
 }

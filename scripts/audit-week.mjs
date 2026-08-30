@@ -17,9 +17,9 @@ for (const b of R.split(/\n  \{\n/).slice(1)) {
     video:/watch\?v=/.test(b), title:/videoTitle:/.test(b),
     contains:(q(/contains: \[([^\]]*)\]/,b,'')||'').replace(/['\s]/g,'').split(',').filter(Boolean) }
 }
-const w=S.slice(S.indexOf('const WEEK'), S.indexOf('function seedPlan'))
+const w=S.slice(S.indexOf('const WEEK1'), S.indexOf('function seedPlan'))
 const days=[...w.matchAll(/\{[\s\S]*?snack: \[([^\]]*)\],\s*\},/g)]
-const names=['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+const names=[...'Mon Tue Wed Thu Fri Sat Sun'.split(' ').map(d=>'1'+d), ...'Mon Tue Wed Thu Fri Sat Sun'.split(' ').map(d=>'2'+d)]
 const pick=(raw,i)=>{raw=raw.trim().replace(/,$/,'')
   if(raw.startsWith('[')){const p=raw.slice(1,-1).split(',').map(x=>x.trim().replace(/'/g,''));return p[Math.min(i,p.length-1)]}
   return raw.replace(/'/g,'')}
@@ -49,7 +49,7 @@ for (const i of [0,1]) {
     const pk=p*4,ck=c*4,fk=f*9,t=pk+ck+fk
     console.log(`${names[di]}  ${String(Math.round(k)).padStart(4)}  ${String(Math.round(p)).padStart(3)}g  ${String(Math.round(c)).padStart(3)}g  ${String(Math.round(f)).padStart(3)}g  ${String(Math.round(fib)).padStart(3)}g | ${String(Math.round(pk/t*100)).padStart(3)}%${String(Math.round(ck/t*100)).padStart(4)}%${String(Math.round(fk/t*100)).padStart(4)}%`)
   })
-  const [k,p,c,f,fib]=T.map(x=>x/7), pk=p*4,ck=c*4,fk=f*9,t=pk+ck+fk
+  const [k,p,c,f,fib]=T.map(x=>x/days.length), pk=p*4,ck=c*4,fk=f*9,t=pk+ck+fk
   console.log(`AVG   ${Math.round(k)}  ${Math.round(p)}g  ${Math.round(c)}g  ${Math.round(f)}g  ${Math.round(fib)}g | ${Math.round(pk/t*100)}%  ${Math.round(ck/t*100)}%  ${Math.round(fk/t*100)}%`)
 }
 console.log('\ncuisine spread (Ruchi):', JSON.stringify(tally[0]))

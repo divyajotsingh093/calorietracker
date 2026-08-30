@@ -55,9 +55,17 @@ pick a non-veg dish while both are selected, it is added only for the person who
 eats it.
 
 Both starter weeks land **under each person's calorie goal every single day**, at
-or above their protein floor, with 32–58 g of fibre. Ruchi averages 1817 kcal with
-110 g of protein; Dj averages 1893 kcal with 145 g. The week is found by search,
-not chosen by eye — see `scripts/plan-week.mjs`.
+or above their protein floor, with 30–68 g of fibre. Ruchi averages 1827 kcal with
+112 g of protein; Dj averages 1898 kcal with 142 g.
+
+The fortnight is searched, not chosen by eye — see `scripts/plan-week.mjs`. All 14
+days are found in one pass, because the two weeks **share no meal**: a breakfast,
+lunch or dinner served in week one never returns in week two, on either plate.
+Snacks do recur. The protein-dense ones are what make 110 g and 140 g reachable
+inside the calorie ceilings and they appear in almost every qualifying day, so
+banning them across weeks leaves zero valid days — searching week one first and
+then excluding its cast fails for the same reason, which is why both weeks are
+planned together.
 
 ## What it does
 
@@ -119,6 +127,14 @@ Both pickers read from one catalogue in `lib/models.ts`, where each model carrie
 a `vision` flag. That flag decides which picker a model appears in, so a text-only
 model can never be selected for photos; type one in by hand and Settings says so
 rather than letting every capture fail with a misleading error.
+
+The conversation persists — switching tabs or reloading no longer wipes it — and
+NOVA learns two different ways. **Memories** are durable things it was told: a
+dislike, an allergy, a routine. It stores them with a `remember` tool, and they
+are listed as plain sentences in the Signals pane where you can add or delete
+them, because memory you cannot inspect is memory you cannot correct. **Habits**
+are read off the plan every turn — what gets planned most, and what gets planned
+repeatedly but never ticked off — so they are never stored and never go stale.
 
 Voice in uses the browser's speech recognition; voice out is off by default.
 
