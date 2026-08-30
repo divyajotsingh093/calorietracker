@@ -13,18 +13,19 @@ const PROVIDERS: { id: VisionProvider; label: string; blurb: string }[] = [
     id: 'offline',
     label: 'On-device',
     blurb:
-      'No key, no network call. You describe the plate and a bundled table of ~65 common foods does the arithmetic.',
+      'No key, no network call. You describe the plate and a bundled table of ~65 common foods does the arithmetic. NOVA still answers from your own plan and totals.',
   },
   {
     id: 'anthropic',
     label: 'Anthropic',
-    blurb: 'Photos go straight to api.anthropic.com and Claude reads the plate.',
+    blurb:
+      'Photos and your questions for NOVA go straight to api.anthropic.com. The key stays in this browser.',
   },
   {
     id: 'openrouter',
     label: 'OpenRouter',
     blurb:
-      'Photos go to openrouter.ai, which routes them to whichever vision model you pick below.',
+      'Photos and your questions for NOVA go to openrouter.ai, which routes them to the model you pick below.',
   },
 ]
 
@@ -141,7 +142,7 @@ export function SettingsSheet({
         })}
 
         <div className="space-y-3 border-t border-line pt-4">
-          <FieldGroup label="Photo analysis">
+          <FieldGroup label="Photo analysis & NOVA">
             <div className="flex flex-wrap gap-2">
               {PROVIDERS.map((p) => (
                 <Chip

@@ -498,6 +498,181 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   NOVA — the assistant surface.
+
+   The rest of the app is warm paper and serif headings. The assistant is a
+   machine you talk to, and it looks like one: a dark instrument panel with
+   cyan and violet light, hairline rules, bracketed corners and monospaced
+   readouts. It carries its own palette rather than the app's, so it reads the
+   same whichever theme and accent are set — you are looking at a different
+   kind of object, not a re-skinned page.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.hud {
+  --hud-void: oklch(0.145 0.032 268);
+  --hud-deep: oklch(0.185 0.038 268);
+  --hud-panel: oklch(0.222 0.036 266 / 0.62);
+  --hud-raise: oklch(0.268 0.040 266 / 0.78);
+  --hud-line: oklch(0.72 0.09 205 / 0.24);
+  --hud-line-soft: oklch(0.72 0.09 205 / 0.12);
+  --hud-cyan: oklch(0.84 0.14 200);
+  --hud-violet: oklch(0.76 0.16 300);
+  --hud-lime: oklch(0.88 0.17 150);
+  --hud-amber: oklch(0.85 0.15 78);
+  --hud-ink: oklch(0.965 0.012 220);
+  --hud-soft: oklch(0.80 0.028 220);
+  --hud-faint: oklch(0.635 0.030 224);
+  --hud-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+
+  position: relative;
+  isolation: isolate;
+  color: var(--hud-ink);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 12% -10%, oklch(0.84 0.14 200 / 0.16), transparent 60%),
+    radial-gradient(110% 75% at 92% 4%, oklch(0.76 0.16 300 / 0.15), transparent 58%),
+    radial-gradient(140% 90% at 50% 118%, oklch(0.88 0.17 150 / 0.08), transparent 62%),
+    linear-gradient(178deg, var(--hud-deep), var(--hud-void));
+  box-shadow:
+    0 40px 90px -30px oklch(0.145 0.032 268 / 0.9),
+    inset 0 1px 0 oklch(1 0 0 / 0.06);
+}
+
+/* Two drifting layers of instrument grid, under everything else. */
+.hud::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  z-index: -2;
+  background-image:
+    linear-gradient(var(--hud-line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hud-line-soft) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(70% 60% at 50% 40%, black, transparent 78%);
+  animation: hud-drift 34s linear infinite;
+}
+
+/* A single scan line sweeping the panel — the only thing that moves fast. */
+.hud::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  height: 34%;
+  top: -34%;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, oklch(0.84 0.14 200 / 0.055), transparent);
+  animation: hud-scan 8.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+@keyframes hud-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(46px, 46px, 0); }
+}
+@keyframes hud-scan {
+  0% { top: -34%; }
+  70%, 100% { top: 118%; }
+}
+
+/* Machine labels: small, wide, monospaced, never shouting. */
+@utility hud-label {
+  font-family: var(--hud-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hud-faint);
+}
+
+@utility hud-num {
+  font-family: var(--hud-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* A panel with its corners drawn rather than its whole border — the frame
+   reads as an overlay on something, which is the whole idea. */
+@utility hud-frame {
+  position: relative;
+  background: var(--hud-panel);
+  border: 1px solid var(--hud-line-soft);
+  border-radius: 0.875rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    border: 1px solid var(--hud-cyan);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  &::before {
+    top: -1px;
+    left: -1px;
+    border-right: 0;
+    border-bottom: 0;
+    border-top-left-radius: 0.875rem;
+  }
+  &::after {
+    right: -1px;
+    bottom: -1px;
+    border-left: 0;
+    border-top: 0;
+    border-bottom-right-radius: 0.875rem;
+  }
+}
+
+/* The reply bubbles: the person is a solid slab, NOVA is lit from within. */
+@utility hud-said {
+  background: var(--hud-raise);
+  border: 1px solid var(--hud-line-soft);
+}
+
+@utility hud-nova {
+  background:
+    linear-gradient(135deg, oklch(0.84 0.14 200 / 0.13), oklch(0.76 0.16 300 / 0.09)),
+    var(--hud-panel);
+  border: 1px solid var(--hud-line);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.07), 0 0 24px -12px var(--hud-cyan);
+}
+
+/* The reactor's rings, each turning at its own rate and direction. */
+@keyframes hud-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes hud-spin-back {
+  to { transform: rotate(-360deg); }
+}
+@keyframes hud-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+/* Kept under scale(1.25) so the pulse stays inside the reactor's own box and
+   never crowds whatever sits next to it. */
+@keyframes hud-pulse-ring {
+  0% { opacity: 0.5; transform: scale(0.82); }
+  100% { opacity: 0; transform: scale(1.24); }
+}
+/* Bars of the listening meter, each with its own --d delay. */
+@keyframes hud-bar {
+  0%, 100% { transform: scaleY(0.22); }
+  50% { transform: scaleY(1); }
+}
+@keyframes hud-blink {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0.15; }
+}
+@keyframes hud-type {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+
 /* People who ask for less motion get none of it. */
 @media (prefers-reduced-motion: reduce) {
   *,

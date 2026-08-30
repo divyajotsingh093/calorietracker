@@ -4,6 +4,7 @@ import { SettingsSheet } from '@/components/SettingsSheet'
 import { ModeSwitch, ModeToggle } from '@/components/ThemeControls'
 import {
   IconBook,
+  IconBolt,
   IconCalendar,
   IconCamera,
   IconCart,
@@ -15,13 +16,14 @@ import { todayISO } from '@/lib/date'
 import { dayTotals } from '@/lib/nutrition'
 import { StoreProvider, useStore } from '@/lib/store'
 import { useTheme } from '@/lib/useTheme'
+import { Assistant } from '@/views/Assistant'
 import { Grocery } from '@/views/Grocery'
 import { Planner } from '@/views/Planner'
 import { Recipes } from '@/views/Recipes'
 import { Snap } from '@/views/Snap'
 import { Today } from '@/views/Today'
 
-type TabId = 'today' | 'plan' | 'recipes' | 'grocery' | 'snap'
+type TabId = 'today' | 'plan' | 'recipes' | 'grocery' | 'snap' | 'nova'
 
 const TABS: { id: TabId; label: string; icon: typeof IconFlame }[] = [
   { id: 'today', label: 'Today', icon: IconFlame },
@@ -29,6 +31,7 @@ const TABS: { id: TabId; label: string; icon: typeof IconFlame }[] = [
   { id: 'recipes', label: 'Dishes', icon: IconBook },
   { id: 'grocery', label: 'Groceries', icon: IconCart },
   { id: 'snap', label: 'Snap', icon: IconCamera },
+  { id: 'nova', label: 'NOVA', icon: IconBolt },
 ]
 
 function Shell() {
@@ -199,6 +202,7 @@ function Shell() {
           {tab === 'recipes' && <Recipes />}
           {tab === 'grocery' && <Grocery />}
           {tab === 'snap' && <Snap onOpenSettings={() => setSettingsOpen(true)} />}
+          {tab === 'nova' && <Assistant onOpenSettings={() => setSettingsOpen(true)} />}
         </main>
       </div>
 

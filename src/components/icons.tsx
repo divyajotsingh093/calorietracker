@@ -167,3 +167,37 @@ export const IconPlay = (p: P) => (
     <path d="M10.2 9.4v5.2l4.4-2.6-4.4-2.6Z" />
   </svg>
 )
+export const IconMic = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="9" y="2.5" width="6" height="11" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3.5M8.5 21.5h7" />
+  </svg>
+)
+export const IconMicOff = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M9 5a3 3 0 0 1 6 0v5m-6 0v1a3 3 0 0 0 4.9 2.3" />
+    <path d="M5 11a7 7 0 0 0 10.9 5.8M19 11v.5M12 18v3.5M8.5 21.5h7M3 3l18 18" />
+  </svg>
+)
+export const IconWave = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M11 5 6.5 9H3v6h3.5L11 19V5Z" />
+    <path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" />
+  </svg>
+)
+export const IconWaveOff = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M11 5 6.5 9H3v6h3.5L11 19V5Z" />
+    <path d="m16 10 5 4M21 10l-5 4" />
+  </svg>
+)
+export const IconSend = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4.5 12h15M13 5.5 19.5 12 13 18.5" />
+  </svg>
+)
+export const IconBolt = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M13 2.5 4.5 13.5H11l-.5 8L19 10.5h-6.5l.5-8Z" />
+  </svg>
+)
