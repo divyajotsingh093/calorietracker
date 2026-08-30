@@ -1,0 +1,429 @@
+import { useEffect, useRef, useState } from 'react'
+import { IconCamera, IconCheck, IconSparkle, IconTrash, IconUpload, IconX } from '@/components/icons'
+import { Button, Card, Chip, Empty, Field, Input, Select, Tag, cx } from '@/components/ui'
+import { PORTION_SCALE, type PortionSize } from '@/data/foods'
+import { longDate, todayISO } from '@/lib/date'
+import { SLOTS, SLOT_META } from '@/lib/slots'
+import { useStore } from '@/lib/store'
+import { analyzeWithClaude, compressImage, estimateFromText, type Analysis } from '@/lib/vision'
+import type { MealSlot } from '@/types'
+
+type Stage = 'capture' | 'review'
+
+export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
+  const { state, addPhoto, removePhoto } = useStore()
+  const [stage, setStage] = useState<Stage>('capture')
+  const [image, setImage] = useState<string | null>(null)
+  const [hint, setHint] = useState('')
+  const [portion, setPortion] = useState<PortionSize>('medium')
+  const [slot, setSlot] = useState<MealSlot>(guessSlot())
+  const [date, setDate] = useState(todayISO())
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState<Analysis | null>(null)
+  const [cameraOn, setCameraOn] = useState(false)
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const hasKey = Boolean(state.settings.apiKey.trim())
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current = null
+    setCameraOn(false)
+  }
+
+  useEffect(() => stopCamera, [])
+
+  const startCamera = async () => {
+    setError('')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      })
+      streamRef.current = stream
+      setCameraOn(true)
+      // The <video> mounts with cameraOn, so attach on the next frame.
+      requestAnimationFrame(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          void videoRef.current.play()
+        }
+      })
+    } catch {
+      setError(
+        'Could not open the camera. Check the browser permission, or upload a photo from the gallery instead.',
+      )
+    }
+  }
+
+  const shoot = () => {
+    const video = videoRef.current
+    if (!video) return
+    const canvas = document.createElement('canvas')
+    const scale = Math.min(1, 720 / Math.max(video.videoWidth, video.videoHeight))
+    canvas.width = Math.round(video.videoWidth * scale)
+    canvas.height = Math.round(video.videoHeight * scale)
+    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height)
+    setImage(canvas.toDataURL('image/jpeg', 0.72))
+    stopCamera()
+    setStage('review')
+  }
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return
+    setError('')
+    try {
+      setImage(await compressImage(file))
+      setStage('review')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not read that image.')
+    }
+  }
+
+  const analyse = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      if (hasKey && image) {
+        setResult(await analyzeWithClaude(image, state.settings.apiKey.trim(), hint))
+      } else {
+        if (!hint.trim()) {
+          setError('Without an API key the estimate needs a hint — list what is on the plate.')
+          return
+        }
+        setResult(estimateFromText(hint, portion))
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Analysis failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const reset = () => {
+    stopCamera()
+    setImage(null)
+    setResult(null)
+    setHint('')
+    setError('')
+    setStage('capture')
+  }
+
+  const log = () => {
+    if (!result) return
+    addPhoto({
+      date,
+      slot,
+      image: image ?? undefined,
+      label: result.label || 'Meal',
+      calories: result.calories,
+      protein: result.protein,
+      carbs: result.carbs,
+      fat: result.fat,
+      source: result.source,
+      note: result.note,
+    })
+    reset()
+  }
+
+  const patchResult = (patch: Partial<Analysis>) =>
+    setResult((r) => (r ? { ...r, ...patch, source: 'manual' } : r))
+
+  const recent = state.photos.slice(0, 8)
+
+  return (
+    <div className="animate-rise space-y-5">
+      <div>
+        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Snap & track</h1>
+        <p className="mt-0.5 text-[13px] text-white/45">
+          Photograph a meal and log its calories.{' '}
+          {hasKey ? (
+            <span className="text-lime-300">Claude vision is on.</span>
+          ) : (
+            <>
+              Running on the built-in food table —{' '}
+              <button
+                onClick={onOpenSettings}
+                className="text-lime-300 underline underline-offset-2 cursor-pointer"
+              >
+                add an API key
+              </button>{' '}
+              for real photo analysis.
+            </>
+          )}
+        </p>
+      </div>
+
+      {error && (
+        <p className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-[13px] text-rose-200">
+          {error}
+        </p>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        {/* Capture panel */}
+        <Card className="overflow-hidden">
+          <div className="relative aspect-[4/3] w-full bg-ink-900">
+            {cameraOn ? (
+              <>
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  className="size-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-end justify-center gap-3 bg-gradient-to-t from-ink-950/80 to-transparent p-5">
+                  <Button variant="ghost" onClick={stopCamera}>
+                    <IconX width={17} height={17} /> Cancel
+                  </Button>
+                  <button
+                    onClick={shoot}
+                    aria-label="Take photo"
+                    className="grid size-16 place-items-center rounded-full border-4 border-white/80 bg-white/20 backdrop-blur transition hover:bg-white/40 active:scale-95 cursor-pointer"
+                  >
+                    <span className="size-11 rounded-full bg-white" />
+                  </button>
+                </div>
+              </>
+            ) : image ? (
+              <>
+                <img src={image} alt="Captured meal" className="size-full object-cover" />
+                <button
+                  onClick={reset}
+                  aria-label="Discard photo"
+                  className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-ink-950/70 text-white/80 backdrop-blur transition hover:bg-ink-950 cursor-pointer"
+                >
+                  <IconX width={18} height={18} />
+                </button>
+              </>
+            ) : (
+              <div className="flex size-full flex-col items-center justify-center gap-4 p-6 text-center">
+                <span className="animate-float text-5xl">📸</span>
+                <p className="max-w-xs text-[13px] text-white/45">
+                  Point the camera at your plate, or pick a photo you already took.
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button variant="primary" onClick={startCamera}>
+                    <IconCamera width={18} height={18} /> Open camera
+                  </Button>
+                  <Button variant="soft" onClick={() => fileRef.current?.click()}>
+                    <IconUpload width={17} height={17} /> Upload photo
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              void onFile(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
+
+          {stage === 'review' && (
+            <div className="space-y-4 border-t border-white/10 p-4 sm:p-5">
+              <Field
+                label={hasKey ? 'Anything worth mentioning?' : 'What is on the plate?'}
+                hint={
+                  hasKey
+                    ? 'Optional. Portion hints like “large bowl” sharpen the estimate.'
+                    : 'Comma-separated, e.g. “grilled chicken, rice, salad” or “150g salmon, broccoli”.'
+                }
+              >
+                <Input
+                  value={hint}
+                  onChange={(e) => setHint(e.target.value)}
+                  placeholder={hasKey ? 'Cooked in olive oil, restaurant portion…' : 'chicken, rice, salad'}
+                  onKeyDown={(e) => e.key === 'Enter' && void analyse()}
+                />
+              </Field>
+
+              {!hasKey && (
+                <Field label="Portion size">
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.keys(PORTION_SCALE) as PortionSize[]).map((p) => (
+                      <Chip key={p} active={portion === p} onClick={() => setPortion(p)}>
+                        {p}
+                      </Chip>
+                    ))}
+                  </div>
+                </Field>
+              )}
+
+              <Button
+                variant="primary"
+                className="w-full"
+                disabled={busy}
+                onClick={() => void analyse()}
+              >
+                <IconSparkle width={17} height={17} />
+                {busy ? 'Analysing…' : result ? 'Re-analyse' : 'Estimate calories'}
+              </Button>
+            </div>
+          )}
+        </Card>
+
+        {/* Result panel */}
+        <Card className="p-4 sm:p-5">
+          {result ? (
+            <div className="space-y-5">
+              <div>
+                <h2 className="font-display text-lg font-semibold capitalize tracking-tight">
+                  {result.label}
+                </h2>
+                <p className="mt-1 text-[13px] text-white/45">{result.note}</p>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2">
+                {(
+                  [
+                    ['calories', 'kcal', 'text-lime-200'],
+                    ['protein', 'protein', 'text-sky-200'],
+                    ['carbs', 'carbs', 'text-amber-200'],
+                    ['fat', 'fat', 'text-orange-200'],
+                  ] as const
+                ).map(([key, label, colour]) => (
+                  <div key={key} className="rounded-2xl bg-white/6 p-2 text-center">
+                    <input
+                      type="number"
+                      min={0}
+                      value={result[key]}
+                      onChange={(e) => patchResult({ [key]: Number(e.target.value) } as never)}
+                      className={cx(
+                        'w-full bg-transparent text-center font-display text-xl font-bold tabular-nums outline-none',
+                        colour,
+                      )}
+                    />
+                    <div className="text-[10px] uppercase tracking-[0.08em] text-white/35">
+                      {label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {result.items.length > 0 && (
+                <div>
+                  <h3 className="mb-2 text-[12px] font-medium uppercase tracking-[0.08em] text-white/45">
+                    Detected
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {result.items.map((i, idx) => (
+                      <li
+                        key={`${i.name}-${idx}`}
+                        className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-sm"
+                      >
+                        <span className="flex-1 capitalize text-white/85">{i.name}</span>
+                        <span className="text-[12px] tabular-nums text-white/40">{i.grams} g</span>
+                        <span className="text-[13px] tabular-nums text-lime-200/80">
+                          {i.calories} kcal
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Meal">
+                  <Select value={slot} onChange={(e) => setSlot(e.target.value as MealSlot)}>
+                    {SLOTS.map((s) => (
+                      <option key={s} value={s}>
+                        {SLOT_META[s].label}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Date">
+                  <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                </Field>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={reset}>
+                  Discard
+                </Button>
+                <Button variant="primary" className="flex-1" onClick={log}>
+                  <IconCheck width={17} height={17} /> Log {result.calories} kcal to{' '}
+                  {SLOT_META[slot].label.toLowerCase()}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Empty
+              emoji="🥄"
+              title="No estimate yet"
+              hint={
+                stage === 'capture'
+                  ? 'Take or upload a photo to get started.'
+                  : 'Describe the plate, then hit estimate.'
+              }
+            />
+          )}
+        </Card>
+      </div>
+
+      {/* History */}
+      <Card className="p-4 sm:p-5">
+        <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.1em] text-white/60">
+          Recent snaps
+        </h2>
+        {recent.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {recent.map((p) => (
+              <div key={p.id} className="group relative overflow-hidden rounded-2xl bg-white/5">
+                {p.image ? (
+                  <img src={p.image} alt={p.label} className="aspect-[4/3] w-full object-cover" />
+                ) : (
+                  <div className="grid aspect-[4/3] w-full place-items-center text-3xl opacity-40">
+                    🍽️
+                  </div>
+                )}
+                <button
+                  aria-label="Delete"
+                  onClick={() => removePhoto(p.id)}
+                  className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-ink-950/70 text-white/70 opacity-0 backdrop-blur transition hover:text-rose-300 group-hover:opacity-100 cursor-pointer"
+                >
+                  <IconTrash width={15} height={15} />
+                </button>
+                <div className="p-3">
+                  <div className="truncate text-sm font-medium capitalize">{p.label}</div>
+                  <div className="mt-1 flex items-center gap-2 text-[12px] text-white/45">
+                    <span className="tabular-nums text-lime-200/80">{p.calories} kcal</span>
+                    <span>·</span>
+                    <span>{SLOT_META[p.slot].label}</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Tag>{longDate(p.date)}</Tag>
+                    <Tag>{p.source === 'ai' ? 'AI' : p.source === 'estimate' ? 'estimate' : 'manual'}</Tag>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="py-6 text-center text-[13px] text-white/35">
+            Meals you snap show up here and count towards the day&apos;s total.
+          </p>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+function guessSlot(): MealSlot {
+  const h = new Date().getHours()
+  if (h < 11) return 'breakfast'
+  if (h < 16) return 'lunch'
+  if (h < 21) return 'dinner'
+  return 'snack'
+}
