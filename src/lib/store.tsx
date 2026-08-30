@@ -25,7 +25,7 @@ import type {
 } from '@/types'
 
 const KEY = 'nourish.state.v2'
-const VERSION = 2
+const VERSION = 3
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 
@@ -57,58 +57,58 @@ interface DaySpec {
  * The seed yoghurt bowl is pinned to two mornings — it is what they actually
  * eat, and a plan that optimises it away is answering the wrong question.
  *
- * As seeded: Ruchi averages 1817 kcal with 110 g protein and 47 g fibre;
- * Dj averages 1893 kcal with 145 g protein and 43 g fibre.
+ * As seeded: Ruchi averages 1807 kcal with 110 g protein and 54 g fibre;
+ * Dj averages 1892 kcal with 141 g protein and 49 g fibre.
  */
 const WEEK: DaySpec[] = [
   {
-    // Mon — Asian / Indian / Salads / Italian
-    breakfast: 'r-congee',
-    lunch: ['r-veg-fried-rice', 'r-teriyaki-salmon-donburi'],
-    dinner: ['r-aloo-gobi', 'r-goan-fish-curry'],
-    snack: ['r-sesame-slaw', 'r-white-bean-dip'],
-  },
-  {
-    // Tue — Indian / Asian / Continental
-    breakfast: ['r-idli-sambar', 'r-shakshuka'],
-    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
-    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
+    // Mon — Continental / Indian / Middle Eastern / Asian
+    breakfast: 'r-smoothie-bowl',
+    lunch: 'r-soya-keema',
+    dinner: ['r-stuffed-peppers', 'r-chicken-shawarma'],
     snack: ['r-edamame', 'r-berry-protein-smoothie'],
   },
   {
-    // Wed — Asian / Middle Eastern / Indian / Mexican
-    breakfast: 'r-congee',
-    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
-    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
-    snack: ['r-dhokla', 'r-black-bean-dip'],
-  },
-  {
-    // Thu — Continental / Asian / Mexican / Middle Eastern
-    breakfast: 'r-seed-yogurt-bowl',
-    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
-    dinner: ['r-sweet-potato-tacos', 'r-fish-tacos'],
-    snack: ['r-edamame', 'r-tzatziki'],
-  },
-  {
-    // Fri — Indian / Italian / Salads / Continental
+    // Tue — Indian / Mexican / Salads / Italian
     breakfast: 'r-dhokla',
     lunch: ['r-palak-paneer', 'r-chicken-tikka-masala'],
-    dinner: ['r-minestrone', 'r-tuna-puttanesca'],
-    snack: ['r-sesame-slaw', 'r-berry-protein-smoothie'],
+    dinner: ['r-black-bean-soup', 'r-chicken-burrito-bowl'],
+    snack: ['r-sesame-slaw', 'r-white-bean-dip'],
   },
   {
-    // Sat — Continental / Middle Eastern / Mexican
-    breakfast: 'r-seed-yogurt-bowl',
-    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
-    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
+    // Wed — Continental / Asian / Middle Eastern / Mexican
+    breakfast: 'r-overnight-oats',
+    lunch: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
+    dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
     snack: ['r-tzatziki', 'r-black-bean-dip'],
   },
   {
-    // Sun — Indian / Salads / Italian
-    breakfast: 'r-dhokla',
-    lunch: ['r-palak-paneer', 'r-chicken-tikka-masala'],
-    dinner: ['r-chickpea-halloumi-salad', 'r-chicken-burrito-bowl'],
-    snack: ['r-sesame-slaw', 'r-bruschetta'],
+    // Thu — Continental / Salads / Middle Eastern / Asian / Italian
+    breakfast: 'r-seed-yogurt-bowl',
+    lunch: 'r-sesame-slaw',
+    dinner: ['r-stuffed-peppers', 'r-chicken-shawarma'],
+    snack: ['r-edamame', 'r-bruschetta'],
+  },
+  {
+    // Fri — Indian / Asian / Middle Eastern / Continental
+    breakfast: ['r-paneer-bhurji', 'r-menemen'],
+    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
+    dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
+    snack: ['r-berry-protein-smoothie', 'r-moong-chaat'],
+  },
+  {
+    // Sat — Continental / Salads / Asian / Mexican
+    breakfast: 'r-seed-yogurt-bowl',
+    lunch: 'r-sesame-slaw',
+    dinner: ['r-chickpea-halloumi-salad', 'r-souvlaki-bowl'],
+    snack: ['r-edamame', 'r-guacamole'],
+  },
+  {
+    // Sun — Asian / Middle Eastern / Italian / Mexican
+    breakfast: 'r-congee',
+    lunch: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
+    dinner: ['r-stuffed-peppers', 'r-chicken-shawarma'],
+    snack: ['r-white-bean-dip', 'r-black-bean-dip'],
   },
 ]
 
@@ -152,9 +152,22 @@ function load(): AppState {
     if (!raw) return freshState()
     const parsed = JSON.parse(raw) as Partial<AppState>
     const base = freshState()
-    // Merge so new seed recipes and new settings fields appear after an update.
+
+    // Merge so new seed dishes, and updates to existing ones, survive a reload.
+    //
+    // The whole library is persisted, so "keep whatever is in storage" meant the
+    // seed copy never won and nobody who had opened the app before an update
+    // ever saw it -- videos, portion weights and recomputed macros all stopped
+    // at whatever was saved first. Only a dish the user actually edited is kept,
+    // and `edited` did not exist before version 3, so older saves take the fresh
+    // library wholesale rather than staying frozen for good.
     const custom = (parsed.recipes ?? []).filter((r) => r.custom)
-    const edited = new Map((parsed.recipes ?? []).filter((r) => !r.custom).map((r) => [r.id, r]))
+    const keepEdits = (parsed.version ?? 0) >= 3
+    const edited = new Map(
+      (parsed.recipes ?? [])
+        .filter((r) => !r.custom && r.edited && keepEdits)
+        .map((r) => [r.id, r]),
+    )
     return {
       ...base,
       ...parsed,
@@ -363,12 +376,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }),
 
       saveRecipe: (recipe) =>
-        patch((s) => ({
-          ...s,
-          recipes: s.recipes.some((r) => r.id === recipe.id)
-            ? s.recipes.map((r) => (r.id === recipe.id ? recipe : r))
-            : [...s.recipes, recipe],
-        })),
+        patch((s) => {
+          // Mark an edit to a seed dish, so the merge on load knows to keep it.
+          const saved = recipe.custom ? recipe : { ...recipe, edited: true }
+          return {
+            ...s,
+            recipes: s.recipes.some((r) => r.id === saved.id)
+              ? s.recipes.map((r) => (r.id === saved.id ? saved : r))
+              : [...s.recipes, saved],
+          }
+        }),
 
       deleteRecipe: (id) =>
         patch((s) => ({

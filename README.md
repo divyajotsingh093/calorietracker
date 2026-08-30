@@ -71,7 +71,7 @@ one readable card per day. **Repeat into week 2** clones a whole week; each day
 has its own menu to copy it to tomorrow or next week. Bulk actions respect the
 current profile scope. Per-day calories flag anything over 2000.
 
-**Dish library** — 69 dishes across Indian, Asian, Middle Eastern, Italian,
+**Dish library** — 81 dishes across Indian, Asian, Middle Eastern, Italian,
 Continental, Mexican and salads, each tagged with what it contains (meat / fish /
 egg / dairy) so diet filtering is exact. Every dish carries **per-serving nutrition
 derived from its own ingredients**, the **weight of one portion in grams**, a full
@@ -164,10 +164,15 @@ Requires Node 20+.
 - **Voice** — speech recognition and synthesis are the browser's own. Chrome and
   Safari support both; Firefox has no recognition, and the microphone button is
   hidden where it is unavailable.
-- **Videos** were researched per dish and point at specific videos, mostly from
-  well-known cooking channels. They were found through search and were not
-  fetch-verified one by one, so the odd one may have been taken down — every dish
-  has an editable video URL and title for exactly that reason.
+- **Videos** were researched per dish — a search per dish, then a specific video
+  picked for a recognisable channel and a full recipe rather than a Short. They
+  were found through search and not played end to end, so the odd one may have
+  been taken down; every dish has an editable video URL and title for exactly
+  that reason.
+- **Saved state and library updates.** The whole library is persisted, so the
+  merge on load keeps only dishes you have actually edited (`edited: true`) and
+  takes everything else fresh. Before version 3 it kept whatever was in storage,
+  which meant nobody who had opened the app before an update ever saw it.
 - **Written recipe links** still point at a search on a reputable recipe site, so
   they don't rot. Paste your own URL on any dish to replace either link.
 - **Drag-and-drop** on the planner is HTML5 drag, so it's desktop-only. On a phone
@@ -177,7 +182,7 @@ Requires Node 20+.
 
 ```
 src/
-  data/recipes.ts       69-dish library, tagged by cuisine and contents
+  data/recipes.ts       81-dish library, tagged by cuisine and contents
   data/foods.ts         per-100g reference table for offline photo estimates
   lib/profiles.ts       the two profiles and the diet rules
   lib/store.tsx         app state, persistence, scope-aware mutations, week seed

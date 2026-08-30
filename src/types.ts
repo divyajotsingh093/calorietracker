@@ -59,6 +59,12 @@ export interface Recipe {
   /** Title of that video, so you can see what you are opening. */
   videoTitle?: string
   custom?: boolean
+  /**
+   * Set when the user edits a seed dish. Without it there is no way to tell a
+   * dish they changed from one merely carried over from the last version, and
+   * every update to the library gets discarded on load.
+   */
+  edited?: boolean
 }
 
 /** `vegetarian` here means ovo-free: no meat, no fish, no egg. */

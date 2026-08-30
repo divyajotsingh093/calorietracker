@@ -49,12 +49,17 @@ const SWAP = {
   'r-mushroom-risotto': 'r-roast-chicken', 'r-caprese-panini': 'r-tuna-puttanesca',
   'r-minestrone': 'r-tuna-puttanesca',
   // Middle Eastern
-  'r-mujadara': 'r-chicken-shawarma', 'r-fattoush-halloumi': 'r-chicken-shawarma',
+  'r-mujadara': 'r-chicken-shawarma',
   'r-stuffed-peppers': 'r-chicken-shawarma', 'r-lentil-soup': 'r-chicken-shawarma',
   // Continental / Mexican / Salads
   'r-halloumi-traybake': 'r-salmon-traybake', 'r-pb-banana-toast': 'r-avocado-toast',
   'r-sweet-potato-tacos': 'r-fish-tacos', 'r-falafel-bowl': 'r-chicken-burrito-bowl',
-  'r-chickpea-halloumi-salad': 'r-chicken-burrito-bowl',
+  'r-chickpea-halloumi-salad': 'r-souvlaki-bowl',
+  // added with the twelve researched dishes
+  'r-mapo-tofu-veg': 'r-beef-stirfry', 'r-tempeh-stirfry': 'r-teriyaki-salmon-donburi',
+  'r-lentil-ragu': 'r-turkey-meatballs', 'r-black-bean-soup': 'r-chicken-burrito-bowl',
+  'r-paneer-bhurji': 'r-menemen', 'r-ful-medames': 'r-menemen',
+  'r-fattoush-halloumi': 'r-harissa-prawns',
 }
 const GOAL = { rk: 1850, rp: 110, dk: 1950, dp: 140, fib: 30 }
 
