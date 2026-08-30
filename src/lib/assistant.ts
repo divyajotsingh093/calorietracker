@@ -110,7 +110,9 @@ How to answer:
 - Be brief and concrete. Two or three sentences is usually right. Lead with the number or the answer, then the reason.
 - You are given today's numbers and the plan. Use them. Never invent a figure you were not given, and never guess a dish's calories — every dish in the library is listed with its real macros.
 - Ruchi is strictly vegetarian and eats no eggs. Never suggest meat, fish or egg for her, and never plan one onto her day.
-- When the person asks you to change something — log a meal, plan a dish, tick something off, add to the shopping list — call the matching tool rather than describing what they should do. Then say in one line what you did.
+- You run this app. When the person asks for a change — log a meal, plan or drop a dish, tick something off, copy or clear a day or a week, move a goal, switch whose plan is showing, open another screen, change the theme, add to the shopping list — call the matching tool. Never answer with instructions for doing it by hand, and never claim to have done something you did not call a tool for.
+- After the tools run you are shown what actually happened. Say it in one line. If something was refused, say why in plain words.
+- Always write a reply. A turn that calls a tool and then says nothing is a failure.
 - If a request is ambiguous about who it is for, and only one person is in view, assume that person. Otherwise ask.
 - Portions matter: quote the serving weight when you recommend a dish.
 - No preamble, no "certainly", no restating the question.`
@@ -192,6 +194,89 @@ export const TOOLS: ToolSpec[] = [
     },
   },
   {
+    name: 'set_goals',
+    description:
+      'Change someone’s daily targets. Only pass the ones being changed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        person: { type: 'string', description: 'Ruchi or Dj' },
+        calories: { type: 'number' },
+        protein: { type: 'number' },
+        carbs: { type: 'number' },
+        fat: { type: 'number' },
+        fibre: { type: 'number' },
+      },
+      required: ['person'],
+    },
+  },
+  {
+    name: 'set_view',
+    description:
+      'Change whose plan the app is showing. Use when asked to “switch to Ruchi” or “show both”.',
+    input_schema: {
+      type: 'object',
+      properties: { person: { type: 'string', description: 'Ruchi, Dj, or both' } },
+      required: ['person'],
+    },
+  },
+  {
+    name: 'open_tab',
+    description: 'Move the app to another screen.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        tab: {
+          type: 'string',
+          enum: ['today', 'plan', 'recipes', 'grocery', 'snap'],
+        },
+      },
+      required: ['tab'],
+    },
+  },
+  {
+    name: 'copy_day',
+    description: 'Copy every meal from one date onto another, for whoever is in view.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        from: { type: 'string', description: 'yyyy-mm-dd' },
+        to: { type: 'string', description: 'yyyy-mm-dd' },
+      },
+      required: ['from', 'to'],
+    },
+  },
+  {
+    name: 'clear_day',
+    description: 'Remove every planned meal from a date, for whoever is in view.',
+    input_schema: {
+      type: 'object',
+      properties: { date: { type: 'string', description: 'yyyy-mm-dd' } },
+      required: ['date'],
+    },
+  },
+  {
+    name: 'copy_week',
+    description:
+      'Copy a whole week of the visible fortnight onto the other one. 0 is this week, 1 is next.',
+    input_schema: {
+      type: 'object',
+      properties: { from: { type: 'number' }, to: { type: 'number' } },
+      required: ['from', 'to'],
+    },
+  },
+  {
+    name: 'set_appearance',
+    description: 'Change the app’s light/dark mode or its accent colour.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string', enum: ['light', 'dark', 'system'] },
+        accent: { type: 'string', enum: ['matcha', 'citrus', 'berry', 'ocean', 'grape'] },
+      },
+    },
+  },
+  {
     name: 'add_to_shopping_list',
     description: 'Add a one-off item to this week’s shopping list.',
     input_schema: {
@@ -220,9 +305,27 @@ export interface ToolResult {
 
 /* ─────────────────────────── providers ─────────────────────────── */
 
+/**
+ * NOVA only ever sends text, so any model in the catalogue works. It does need
+ * tool calling and room for the whole dish library plus the fortnight's plan.
+ *
+ * GLM 5.2 is the default: tool calling over a 1M-token context, at a fraction
+ * of a frontier model's price.
+ */
+export const DEFAULT_CHAT_MODEL = 'z-ai/glm-5.2'
+
+
 export interface Reply {
   text: string
   calls: ToolCall[]
+  /** why the model stopped — 'length' means it ran out of budget mid-answer */
+  finish: string
+  /**
+   * The assistant message exactly as the provider returned it. Tool protocols
+   * require echoing it back verbatim on the next turn; rebuilding it by hand is
+   * how a model ends up seeing a call it never made.
+   */
+  echo: unknown
 }
 
 interface AnthropicBlock {
@@ -233,9 +336,7 @@ interface AnthropicBlock {
   input?: Record<string, unknown>
 }
 
-export type WireMessage =
-  | { role: 'user' | 'assistant'; content: string }
-  | { role: 'user' | 'assistant'; content: unknown[] }
+export type WireMessage = { role: 'user' | 'assistant' | 'tool'; [k: string]: unknown }
 
 /** True when a model is configured; without one the local engine answers. */
 export function assistantProvider(settings: Settings): 'anthropic' | 'openrouter' | null {
@@ -246,15 +347,11 @@ export function assistantProvider(settings: Settings): 'anthropic' | 'openrouter
 }
 
 /**
- * NOVA only ever sends text, so any model in the catalogue works. It does need
- * tool calling and room for the whole dish library plus the fortnight's plan.
- *
- * GLM 5.2 is the default: tool calling over a 1M-token context, at a fraction
- * of a frontier model's price.
+ * Reply budget. This has to clear the model's own thinking as well as the
+ * answer: a reasoning model given 900 tokens can spend all of them before it
+ * writes a word, and returns empty content with finish_reason "length".
  */
-export const DEFAULT_CHAT_MODEL = 'z-ai/glm-5.2'
-
-const MAX_TOKENS = 900
+const MAX_TOKENS = 3000
 
 export async function askAnthropic(
   messages: WireMessage[],
@@ -277,7 +374,11 @@ export async function askAnthropic(
       messages,
     }),
   })
-  const json = (await res.json()) as { content?: AnthropicBlock[]; error?: { message?: string } }
+  const json = (await res.json()) as {
+    content?: AnthropicBlock[]
+    stop_reason?: string
+    error?: { message?: string }
+  }
   if (!res.ok) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
 
   const blocks = json.content ?? []
@@ -290,12 +391,23 @@ export async function askAnthropic(
     calls: blocks
       .filter((b) => b.type === 'tool_use')
       .map((b) => ({ id: b.id ?? '', name: b.name ?? '', input: b.input ?? {} })),
+    finish: json.stop_reason === 'max_tokens' ? 'length' : (json.stop_reason ?? 'stop'),
+    echo: { role: 'assistant', content: blocks },
   }
 }
 
 interface OpenAIToolCall {
   id: string
+  type?: string
   function?: { name?: string; arguments?: string }
+}
+
+interface OpenAIMessage {
+  role?: string
+  content?: string | null
+  /** OpenRouter surfaces a reasoning model's scratchpad separately from content */
+  reasoning?: string | null
+  tool_calls?: OpenAIToolCall[]
 }
 
 export async function askOpenRouter(
@@ -315,6 +427,9 @@ export async function askOpenRouter(
     body: JSON.stringify({
       model: model || DEFAULT_CHAT_MODEL,
       max_tokens: MAX_TOKENS,
+      // Keep the thinking short so the budget goes on the answer. Every model
+      // here can reason; none of them needs to for "what is left today?".
+      reasoning: { effort: 'low' },
       messages: [{ role: 'system', content: system }, ...messages],
       tools: TOOLS.map((t) => ({
         type: 'function',
@@ -323,26 +438,82 @@ export async function askOpenRouter(
     }),
   })
   const json = (await res.json()) as {
-    choices?: { message?: { content?: string; tool_calls?: OpenAIToolCall[] } }[]
+    choices?: { message?: OpenAIMessage; finish_reason?: string }[]
     error?: { message?: string }
   }
   if (!res.ok) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
   // OpenRouter can answer 200 with an error body when the upstream model fails.
   if (json.error?.message) throw new Error(json.error.message)
 
-  const msg = json.choices?.[0]?.message
+  const choice = json.choices?.[0]
+  const msg = choice?.message ?? {}
+  const calls = (msg.tool_calls ?? []).map((c) => {
+    let input: Record<string, unknown> = {}
+    try {
+      input = JSON.parse(c.function?.arguments ?? '{}')
+    } catch {
+      input = {}
+    }
+    return { id: c.id, name: c.function?.name ?? '', input }
+  })
+
+  // A reasoning model that spent its whole budget thinking leaves content empty.
+  // Its scratchpad is the only thing it actually said, so it beats saying nothing.
+  const text = (msg.content ?? '').trim() || (msg.reasoning ?? '').trim()
+
   return {
-    text: (msg?.content ?? '').trim(),
-    calls: (msg?.tool_calls ?? []).map((c) => {
-      let input: Record<string, unknown> = {}
-      try {
-        input = JSON.parse(c.function?.arguments ?? '{}')
-      } catch {
-        input = {}
-      }
-      return { id: c.id, name: c.function?.name ?? '', input }
-    }),
+    text,
+    calls,
+    finish: choice?.finish_reason ?? 'stop',
+    echo: { role: 'assistant', content: msg.content ?? '', tool_calls: msg.tool_calls },
   }
+}
+
+/** The tool-result turn, in whichever shape the provider expects. */
+export function resultMessages(
+  provider: 'anthropic' | 'openrouter',
+  results: { call: ToolCall; record: ActionRecord }[],
+): WireMessage[] {
+  if (provider === 'anthropic') {
+    return [
+      {
+        role: 'user',
+        content: results.map((r) => ({
+          type: 'tool_result',
+          tool_use_id: r.call.id,
+          content: r.record.detail,
+          is_error: !r.record.ok,
+        })),
+      },
+    ]
+  }
+  // OpenAI-style wants one `tool` message per call, keyed by id. Describing the
+  // results in a user message instead is what left models re-calling the tool
+  // and answering with nothing.
+  return results.map((r) => ({
+    role: 'tool',
+    tool_call_id: r.call.id,
+    name: r.call.name,
+    content: `${r.record.ok ? 'ok' : 'failed'}: ${r.record.detail}`,
+  }))
+}
+
+/**
+ * What to say when the model returns no text at all. Never "Done." — that hides
+ * a truncated answer, a refused tool and a dead model behind the same word.
+ */
+export function emptyReplyNote(reply: Reply, actions: ActionRecord[]): string {
+  if (reply.finish === 'length') {
+    return actions.length
+      ? 'I made the change below, but ran out of reply budget before writing it up.'
+      : 'The reply hit its length limit before any text came back. Try a shorter question, or a model with more room.'
+  }
+  if (actions.length) {
+    return actions.every((a) => a.ok)
+      ? 'Done — the change is listed below.'
+      : 'That did not go through; see below.'
+  }
+  return 'The model sent an empty reply. Try asking again, or switch model in Settings.'
 }
 
 /* ─────────────────────── on-device fallback ─────────────────────── */

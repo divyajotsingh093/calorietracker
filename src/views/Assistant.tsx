@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Meter, Rail, Reactor, Thinking, Typed, type ReactorState } from '@/components/hud'
+import { DataTable, MACRO, MacroColumns, Meter as Bar, niceMax } from '@/components/charts'
+import { Meter, Reactor, Thinking, Typed, type ReactorState } from '@/components/hud'
 import {
   IconBolt,
   IconMic,
@@ -19,6 +20,8 @@ import {
   DEFAULT_CHAT_MODEL,
   assistantProvider,
   buildContext,
+  emptyReplyNote,
+  resultMessages,
   buildLibrary,
   type ActionRecord,
   type ToolCall,
@@ -27,12 +30,19 @@ import {
 } from '@/lib/assistant'
 import { todayISO } from '@/lib/date'
 import { dayTotals } from '@/lib/nutrition'
+import { averages, daySeries } from '@/lib/series'
 import { dietClash } from '@/lib/profiles'
 import { useListener, useVoice } from '@/lib/speech'
+import { ACCENTS, type Accent, type ThemeMode } from '@/lib/theme'
 import { useStore, uid } from '@/lib/store'
 import type { MealSlot, PlanEntry, Profile } from '@/types'
 
 const SLOTS: MealSlot[] = ['breakfast', 'lunch', 'dinner', 'snack']
+const TABS = ['today', 'plan', 'recipes', 'grocery', 'snap'] as const
+type Tab = (typeof TABS)[number]
+const MODES: string[] = ['light', 'dark', 'system']
+const ACCENT_IDS: string[] = ACCENTS.map((a) => a.id)
+const ISO = /^\d{4}-\d{2}-\d{2}$/
 
 const PROMPTS = [
   'What is left in my budget today?',
@@ -43,7 +53,14 @@ const PROMPTS = [
   'What should I prep tonight for tomorrow?',
 ]
 
-export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
+export interface AssistantProps {
+  onOpenSettings: () => void
+  /** NOVA can move the app between screens */
+  onNavigate: (tab: 'today' | 'plan' | 'recipes' | 'grocery' | 'snap') => void
+  theme: { setMode: (m: ThemeMode) => void; setAccent: (a: Accent) => void }
+}
+
+export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps) {
   const store = useStore()
   const { state, recipeMap, days, scoped, activeProfile } = store
 
@@ -72,7 +89,7 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
   const runTool = useCallback(
     (call: ToolCall): ActionRecord => {
       const a = call.input
-      const date = typeof a.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(a.date) ? a.date : today
+      const date = typeof a.date === 'string' && ISO.test(a.date) ? a.date : today
       const slot = (SLOTS.includes(a.slot as MealSlot) ? a.slot : 'snack') as MealSlot
       const people = findProfiles(a.person)
       const fail = (detail: string): ActionRecord => ({ name: call.name, detail, ok: false })
@@ -155,6 +172,96 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
           }
         }
 
+        case 'set_goals': {
+          const target = people[0]
+          if (!target) return fail('No such person')
+          const patch: Partial<Profile> = {}
+          const map = [
+            ['calories', 'calorieGoal'],
+            ['protein', 'proteinGoal'],
+            ['carbs', 'carbGoal'],
+            ['fat', 'fatGoal'],
+            ['fibre', 'fibreGoal'],
+          ] as const
+          const changed: string[] = []
+          for (const [arg, key] of map) {
+            const n = Number(a[arg])
+            if (Number.isFinite(n) && n > 0) {
+              patch[key] = Math.round(n)
+              changed.push(`${arg} ${Math.round(n)}`)
+            }
+          }
+          if (!changed.length) return fail('No goal values were given')
+          store.updateProfile(target.id, patch)
+          return {
+            name: call.name,
+            detail: `${target.name}: ${changed.join(', ')}`,
+            ok: true,
+          }
+        }
+
+        case 'set_view': {
+          const name = String(a.person ?? '').toLowerCase()
+          const one = state.profiles.find((p) => name.includes(p.name.toLowerCase()))
+          store.setScope(one ? one.id : 'both')
+          return {
+            name: call.name,
+            detail: `Showing ${one ? one.name : 'both plans'}`,
+            ok: true,
+          }
+        }
+
+        case 'open_tab': {
+          const tab = String(a.tab ?? '')
+          if (!TABS.includes(tab as Tab)) return fail(`No screen called ${tab}`)
+          onNavigate(tab as Tab)
+          return { name: call.name, detail: `Opened ${tab}`, ok: true }
+        }
+
+        case 'copy_day': {
+          const from = String(a.from ?? '')
+          const to = String(a.to ?? '')
+          if (!ISO.test(from) || !ISO.test(to)) return fail('Dates must be yyyy-mm-dd')
+          if (!state.plan.some((e) => e.date === from)) return fail(`Nothing is planned on ${from}`)
+          store.copyDay(from, to)
+          return { name: call.name, detail: `Copied ${from} onto ${to}`, ok: true }
+        }
+
+        case 'clear_day': {
+          if (!ISO.test(date)) return fail('Date must be yyyy-mm-dd')
+          if (!state.plan.some((e) => e.date === date)) return fail(`${date} is already empty`)
+          store.clearDay(date)
+          return { name: call.name, detail: `Cleared ${date}`, ok: true }
+        }
+
+        case 'copy_week': {
+          const from = Number(a.from) === 1 ? 1 : 0
+          const to = Number(a.to) === 1 ? 1 : 0
+          if (from === to) return fail('Pick two different weeks')
+          store.copyWeek(from, to)
+          return {
+            name: call.name,
+            detail: `Copied week ${from + 1} onto week ${to + 1}`,
+            ok: true,
+          }
+        }
+
+        case 'set_appearance': {
+          const changed: string[] = []
+          const mode = String(a.mode ?? '')
+          const accent = String(a.accent ?? '')
+          if (MODES.includes(mode as ThemeMode)) {
+            theme.setMode(mode as ThemeMode)
+            changed.push(`${mode} mode`)
+          }
+          if (ACCENT_IDS.includes(accent as Accent)) {
+            theme.setAccent(accent as Accent)
+            changed.push(`${accent} accent`)
+          }
+          if (!changed.length) return fail('No recognised mode or accent')
+          return { name: call.name, detail: `Switched to ${changed.join(' and ')}`, ok: true }
+        }
+
         case 'add_to_shopping_list': {
           const item = String(a.item ?? '').trim()
           if (!item) return fail('No item given')
@@ -171,7 +278,7 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
           return fail(`Unknown tool ${call.name}`)
       }
     },
-    [findProfiles, recipeMap, state.plan, store, today],
+    [findProfiles, onNavigate, recipeMap, state.plan, state.profiles, store, theme, today],
   )
 
   /* ─────────── the turn ─────────── */
@@ -220,57 +327,29 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
 
       try {
         const done: ActionRecord[] = []
-        let reply = await ask(wire)
+        const convo: WireMessage[] = [...wire]
+        let reply = await ask(convo)
 
-        // One round of tools is enough for everything this assistant can do;
-        // a second pass lets it report on what actually happened.
-        if (reply.calls.length) {
+        // Keep going while the model asks for tools. One round was not enough:
+        // a model that plans a dish, sees it worked and then wants to tick it
+        // off would have had its second call dropped on the floor.
+        for (let round = 0; round < 4 && reply.calls.length; round++) {
           const results = reply.calls.map((c) => ({ call: c, record: runTool(c) }))
           done.push(...results.map((r) => r.record))
-
-          const asAssistant =
-            provider === 'anthropic'
-              ? {
-                  role: 'assistant' as const,
-                  content: [
-                    ...(reply.text ? [{ type: 'text', text: reply.text }] : []),
-                    ...reply.calls.map((c) => ({
-                      type: 'tool_use',
-                      id: c.id,
-                      name: c.name,
-                      input: c.input,
-                    })),
-                  ],
-                }
-              : {
-                  role: 'assistant' as const,
-                  content: reply.text || '',
-                }
-          const asResult =
-            provider === 'anthropic'
-              ? {
-                  role: 'user' as const,
-                  content: results.map((r) => ({
-                    type: 'tool_result',
-                    tool_use_id: r.call.id,
-                    content: r.record.detail,
-                    is_error: !r.record.ok,
-                  })),
-                }
-              : {
-                  role: 'user' as const,
-                  content: `Result of what you asked for: ${results
-                    .map((r) => `${r.record.ok ? 'done' : 'failed'} — ${r.record.detail}`)
-                    .join('; ')}. Tell me in one line, and do not call the tool again.`,
-                }
-
-          reply = await ask([...wire, asAssistant, asResult])
+          convo.push(reply.echo as WireMessage, ...resultMessages(provider, results))
+          reply = await ask(convo)
         }
 
-        const text = reply.text || 'Done.'
+        const text = reply.text || emptyReplyNote(reply, done)
         setTurns((t) => [
           ...t,
-          { id: uid(), role: 'assistant', text, actions: done.length ? done : undefined },
+          {
+            id: uid(),
+            role: 'assistant',
+            text,
+            actions: done.length ? done : undefined,
+            error: !reply.text && !done.length,
+          },
         ])
         voice.speak(text)
       } catch (err) {
@@ -322,26 +401,26 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
         ? 'anthropic'
         : ''
 
-  /* ─────────── live telemetry ─────────── */
+  /* ─────────── signals ─────────── */
 
-  const telemetry = useMemo(
-    () =>
-      scoped.map((p) => {
-        const eaten = dayTotals(today, p.id, state.plan, state.photos, recipeMap, 'eaten')
-        const planned = dayTotals(today, p.id, state.plan, state.photos, recipeMap, 'planned')
-        return {
-          p,
-          left: Math.round(p.calorieGoal - eaten.calories),
-          kcalPct: (eaten.calories / Math.max(1, p.calorieGoal)) * 100,
-          protein: Math.round(eaten.protein),
-          proteinPct: (eaten.protein / Math.max(1, p.proteinGoal)) * 100,
-          fibre: Math.round(eaten.fibre),
-          fibrePct: (eaten.fibre / Math.max(1, p.fibreGoal)) * 100,
-          planned: Math.round(planned.calories),
-        }
-      }),
-    [scoped, state.plan, state.photos, recipeMap, today],
-  )
+  const [pane, setPane] = useState<'console' | 'signals'>('console')
+
+  // The visible week, per person: the stacked column reads a whole week at a
+  // glance, which is the question the numbers alone never answered — is the
+  // shortfall today, or every day?
+  const signals = useMemo(() => {
+    const rows = scoped.map((p) => {
+      const points = daySeries(days.slice(0, 7), p, state.plan, state.photos, recipeMap)
+      return { profile: p, points, avg: averages(points) }
+    })
+    // one ceiling across both people, so the two charts can be read against
+    // each other rather than each flattering its own owner
+    const peak = Math.max(
+      ...rows.flatMap((r) => [r.profile.calorieGoal, ...r.points.map((p) => p.calories)]),
+      1,
+    )
+    return { rows, max: niceMax(peak * 1.08) }
+  }, [scoped, days, state.plan, state.photos, recipeMap])
 
   return (
     <div className="animate-rise space-y-4">
@@ -400,70 +479,57 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
           </div>
         </header>
 
-        {/* ── telemetry ── */}
-        <div className="grid grid-cols-2 gap-2.5 px-4 py-3 sm:px-6">
-          {telemetry.map((t) => (
-            <div key={t.p.id} className="hud-frame px-3 py-2.5 sm:px-3.5 sm:py-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="hud-label truncate">
-                  {t.p.emoji} {t.p.name}
-                </span>
-                <span className="hud-num hidden text-[0.625rem] text-[var(--hud-faint)] sm:inline">
-                  {t.planned} kcal planned
-                </span>
-              </div>
-              {/* Fibre is the third priority, so it is the one that goes when
-                  the column is only half a phone wide. */}
-              <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <Cell
-                  value={t.left}
-                  unit="left"
-                  tone={t.left < 0 ? 'amber' : 'cyan'}
-                  pct={t.kcalPct}
-                />
-                <Cell
-                  value={t.protein}
-                  unit={`/${t.p.proteinGoal} P`}
-                  tone="violet"
-                  pct={t.proteinPct}
-                />
-                <div className="hidden sm:block">
-                  <Cell
-                    value={t.fibre}
-                    unit={`/${t.p.fibreGoal} fib`}
-                    tone="lime"
-                    pct={t.fibrePct}
-                  />
-                </div>
-              </div>
-            </div>
+        {/* ── pane switch: side by side on a desktop, one at a time on a phone ── */}
+        <div className="flex gap-1.5 px-4 pt-3 sm:px-6 lg:hidden">
+          {(['console', 'signals'] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setPane(id)}
+              aria-pressed={pane === id}
+              className="press hud-label flex-1 cursor-pointer rounded-lg border py-2 transition-colors"
+              style={{
+                borderColor: pane === id ? 'var(--hud-cyan)' : 'var(--hud-line-soft)',
+                background: pane === id ? 'oklch(0.84 0.14 200 / 0.12)' : 'transparent',
+                color: pane === id ? 'var(--hud-cyan)' : 'var(--hud-faint)',
+              }}
+            >
+              {id === 'console' ? 'Console' : 'Signals'}
+            </button>
           ))}
         </div>
 
-        {/* ── transcript ── */}
-        <div
-          ref={scroller}
-          // min-h-0: a flex item defaults to min-height:auto, so without this the
-          // standby panel refuses to shrink and pushes the composer off-screen
-          className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-2 sm:px-6"
-          aria-live="polite"
-        >
-          {turns.length === 0 ? (
-            <Standby provider={Boolean(provider)} onPick={(p) => void send(p)} />
-          ) : (
-            <div className="space-y-3 py-1">
-              {turns.map((turn, i) => (
-                <Bubble key={turn.id} turn={turn} fresh={i === turns.length - 1} />
-              ))}
-              {busy && (
-                <div className="hud-nova inline-flex items-center gap-2.5 rounded-2xl px-4 py-2.5">
-                  <Thinking />
-                  <span className="hud-label">reading the plan</span>
+        <div className="flex min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem]">
+          {/* ── conversation ── */}
+          <div
+            className={cx(
+              'flex min-h-0 flex-1 flex-col lg:flex',
+              pane === 'signals' && 'hidden lg:flex',
+            )}
+          >
+            <div
+              ref={scroller}
+              // min-h-0: a flex item defaults to min-height:auto, so without this
+              // the standby panel refuses to shrink and pushes the composer off
+              className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-2 sm:px-6"
+              aria-live="polite"
+            >
+              {turns.length === 0 ? (
+                <Standby provider={Boolean(provider)} onPick={(p) => void send(p)} />
+              ) : (
+                <div className="space-y-3 py-1">
+                  {turns.map((turn, i) => (
+                    <Bubble key={turn.id} turn={turn} fresh={i === turns.length - 1} />
+                  ))}
+                  {busy && (
+                    <div className="hud-nova inline-flex items-center gap-2.5 rounded-2xl px-4 py-2.5">
+                      <Thinking />
+                      <span className="hud-label">reading the plan</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
 
         {/* ── composer ── */}
         <div className="border-t border-[var(--hud-line-soft)] px-4 py-3.5 sm:px-6">
@@ -530,9 +596,83 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
 
           <p className="hud-label mt-2.5 leading-relaxed">
             {provider
-              ? 'NOVA can log meals, plan dishes and edit your shopping list — it says what it changed.'
+              ? 'NOVA runs the app — plan, log, goals, screens and theme. It says what it changed.'
               : 'No model connected — answering from your own data. Add a key in Settings for the rest.'}
           </p>
+            </div>
+          </div>
+
+          {/* ── signals ── */}
+          <aside
+            className={cx(
+              'no-scrollbar min-h-0 space-y-4 overflow-y-auto px-4 py-3 sm:px-6 lg:block lg:border-l lg:border-[var(--hud-line-soft)] lg:px-4',
+              pane === 'console' && 'hidden lg:block',
+            )}
+            aria-label="Nutrition signals"
+          >
+            {signals.rows.map(({ profile, points, avg }) => {
+              const eaten = dayTotals(
+                today,
+                profile.id,
+                state.plan,
+                state.photos,
+                recipeMap,
+                'eaten',
+              )
+              return (
+                <section key={profile.id} className="hud-frame px-3 py-3">
+                  <div className="mb-2.5 flex items-baseline justify-between gap-2">
+                    <span className="hud-label truncate">
+                      {profile.emoji} {profile.name}
+                    </span>
+                    <span className="hud-num text-[0.625rem] text-[var(--hud-faint)]">
+                      avg {avg.calories.toLocaleString()} kcal · {avg.protein} g P
+                    </span>
+                  </div>
+
+                  <div className="mb-3 space-y-2">
+                    <Bar
+                      label="Eaten today"
+                      value={eaten.calories}
+                      goal={profile.calorieGoal}
+                      unit="kcal"
+                      colour={MACRO.protein}
+                    />
+                    <Bar
+                      label="Protein"
+                      value={eaten.protein}
+                      goal={profile.proteinGoal}
+                      unit="g"
+                      colour={MACRO.carbs}
+                    />
+                    <Bar
+                      label="Fibre"
+                      value={eaten.fibre}
+                      goal={profile.fibreGoal}
+                      unit="g"
+                      colour={MACRO.fat}
+                    />
+                  </div>
+
+                  <MacroColumns
+                    points={points}
+                    goal={profile.calorieGoal}
+                    name={profile.name}
+                    max={signals.max}
+                  />
+
+                  <details className="mt-3 border-t border-[var(--hud-line-soft)] pt-2">
+                    <summary className="hud-label cursor-pointer list-none">
+                      Show the numbers
+                    </summary>
+                    <div className="mt-2">
+                      <DataTable points={points} name={profile.name} />
+                    </div>
+                  </details>
+                </section>
+              )
+            })}
+          </aside>
         </div>
       </div>
     </div>
@@ -540,33 +680,6 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
 }
 
 /* ───────────────────────── pieces ───────────────────────── */
-
-function Cell({
-  value,
-  unit,
-  tone,
-  pct,
-}: {
-  value: number
-  unit: string
-  tone: 'cyan' | 'violet' | 'lime' | 'amber'
-  pct: number
-}) {
-  return (
-    <div className="min-w-0">
-      <div className="flex flex-wrap items-baseline gap-x-1">
-        <span
-          className="hud-num text-[1.0625rem] leading-none font-semibold"
-          style={{ color: `var(--hud-${tone})` }}
-        >
-          {value}
-        </span>
-        <span className="hud-num text-[0.625rem] text-[var(--hud-faint)]">{unit}</span>
-      </div>
-      <Rail pct={pct} tone={tone} />
-    </div>
-  )
-}
 
 function HudButton({
   children,

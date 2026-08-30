@@ -149,26 +149,6 @@ export function Thinking() {
   )
 }
 
-/** A thin progress rail under a readout. */
-export function Rail({ pct, tone = 'cyan' }: { pct: number; tone?: string }) {
-  return (
-    <div
-      className="mt-2 h-[3px] overflow-hidden rounded-full"
-      style={{ background: 'var(--hud-line-soft)' }}
-    >
-      <div
-        className="h-full rounded-full"
-        style={{
-          width: `${Math.max(0, Math.min(100, pct))}%`,
-          background: `linear-gradient(90deg, var(--hud-${tone}), color-mix(in oklab, var(--hud-${tone}) 40%, transparent))`,
-          boxShadow: `0 0 10px -2px var(--hud-${tone})`,
-          transition: 'width 0.9s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
-      />
-    </div>
-  )
-}
-
 /**
  * Reveals text a few characters at a time. Purely presentational: the whole
  * reply is already in the DOM for a screen reader, only the visible slice

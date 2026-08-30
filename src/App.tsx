@@ -202,7 +202,13 @@ function Shell() {
           {tab === 'recipes' && <Recipes />}
           {tab === 'grocery' && <Grocery />}
           {tab === 'snap' && <Snap onOpenSettings={() => setSettingsOpen(true)} />}
-          {tab === 'nova' && <Assistant onOpenSettings={() => setSettingsOpen(true)} />}
+          {tab === 'nova' && (
+            <Assistant
+              onOpenSettings={() => setSettingsOpen(true)}
+              onNavigate={setTab}
+              theme={theme}
+            />
+          )}
         </main>
       </div>
 

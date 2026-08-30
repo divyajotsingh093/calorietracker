@@ -89,15 +89,24 @@ Quantities round up to what a shop actually sells, so a plan needing a quarter o
 a chicken still puts one chicken in the basket. Check items off, add extras, then
 copy as text or print.
 
-**NOVA** — a nutrition assistant with its own instrument-panel surface: a reactor
-that changes colour and speed as it listens, thinks and speaks, live readouts of
-what each person has left today, and a transcript. Talk to it or type. It is given
-today's numbers, the fortnight's plan and every dish in the library, and it can act
-on them — log a meal, plan or remove a dish, tick a meal off, add to the shopping
-list — reporting each change as a checked line under its reply. A diet clash is
-refused by the app rather than trusted to the model, so nothing with meat, fish or
-egg reaches Ruchi's plan. Without an API key it still answers from your own data:
-what's planned, what's been eaten, what's left.
+**NOVA** — a nutrition assistant with its own instrument-panel surface, in two
+panes: a **Console** you talk to and **Signals**, a live read of the week.
+
+Signals plots each person's week as a stacked column of where the energy came
+from — protein, carbs and fat, in kcal, because that is the only unit in which
+they sum to the day's total — against their calorie goal as a reference line.
+Both charts share one y-axis so the two people can actually be compared, hovering
+or tab-focusing a day fills the readout above the chart, and every number is in a
+table under *Show the numbers* so nothing is gated behind a hover.
+
+The Console is given today's numbers, the fortnight's plan and every dish in the
+library, and it **runs the app**: log a meal, plan or remove a dish, tick a meal
+off, move a goal, copy or clear a day or a week, switch whose plan is showing,
+open another screen, change the theme, add to the shopping list. Each change is
+reported as a checked line under the reply. A diet clash is refused by the app
+rather than trusted to the model, so nothing with meat, fish or egg reaches
+Ruchi's plan. Without an API key it still answers from your own data: what's
+planned, what's been eaten, what's left.
 
 On OpenRouter, NOVA has its own model setting, separate from the photo one.
 Photo analysis needs vision; NOVA needs tool calling and a long context but no
