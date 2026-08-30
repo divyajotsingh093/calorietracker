@@ -397,10 +397,10 @@ export interface ToolResult {
  * NOVA only ever sends text, so any model in the catalogue works. It does need
  * tool calling and room for the whole dish library plus the fortnight's plan.
  *
- * GLM 5.2 is the default: tool calling over a 1M-token context, at a fraction
- * of a frontier model's price.
+ * GLM 5.2's free tier is the default: tool calling over a 1M-token context, and
+ * on the deployment key's allowed list.
  */
-export const DEFAULT_CHAT_MODEL = 'z-ai/glm-5.2'
+export const DEFAULT_CHAT_MODEL = 'z-ai/glm-5.2:free'
 
 
 export interface Reply {

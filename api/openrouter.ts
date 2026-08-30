@@ -19,24 +19,26 @@ export const config = { runtime: 'edge' }
 const UPSTREAM = 'https://openrouter.ai/api/v1/chat/completions'
 
 /**
- * Models this endpoint will pay for. An open passthrough lets a caller name the
+ * Models this endpoint will call. Mirrors src/lib/models.ts, which in turn
+ * mirrors the Allowed Models on the key — OpenRouter rejects anything else, so
+ * a slug outside this set can only produce a failed request.
+ *
+ * The list is also the abuse guard: an open passthrough lets a caller name the
  * most expensive model on the platform and bill it to whoever owns the key.
  */
 const ALLOWED = new Set([
-  'z-ai/glm-5.2',
-  'z-ai/glm-5.3',
-  'z-ai/glm-4.7',
-  'z-ai/glm-4.6v',
-  'z-ai/glm-5v-turbo',
-  'nvidia/nemotron-3.5-lightning',
-  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
-  'thinkingmachines/inkling',
-  'thinkingmachines/inkling-small',
-  'xiaomi/mimo-v2.5',
-  'google/gemini-3.7-flash',
-  'anthropic/claude-sonnet-5',
-  'anthropic/claude-sonnet-4.6',
-  'google/gemini-3.6-flash',
+  // multimodal
+  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+  'minimax/minimax-m3:free',
+  'google/gemma-4-31b-it:free',
+  'google/gemma-4-26b-a4b-it:free',
+  'thinkingmachines/inkling:free',
+  'thinkingmachines/inkling-small:free',
+  // text
+  'z-ai/glm-5.2:free',
+  'nvidia/nemotron-3.5-lightning:free',
+  'openrouter/owl-alpha',
+  'nvidia/nemotron-3-super-120b-a12b:free',
 ])
 
 const MAX_TOKENS = 4000

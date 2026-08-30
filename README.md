@@ -119,14 +119,21 @@ planned, what's been eaten, what's left.
 On OpenRouter, NOVA has its own model setting, separate from the photo one.
 Photo analysis needs vision; NOVA needs tool calling and a long context but no
 vision at all, and several of the best models for that are text-only. It defaults
-to **GLM 5.2** (`z-ai/glm-5.2`) — tool calling over a 1M-token context at a
-fraction of a frontier model's price; **Nemotron 3.5 Lightning** is the cheap
-alternative. Pick anything else from either list, or type a slug.
+to **GLM 5.2** (`z-ai/glm-5.2:free`) — tool calling over a 1M-token context;
+**Nemotron 3.5 Lightning** and **Owl Alpha** are the alternatives with tool
+calling. Pick anything else from either list, or type a slug.
 
 Both pickers read from one catalogue in `lib/models.ts`, where each model carries
 a `vision` flag. That flag decides which picker a model appears in, so a text-only
 model can never be selected for photos; type one in by hand and Settings says so
 rather than letting every capture fail with a misleading error.
+
+The catalogue mirrors the **Allowed Models** on the deployment's key. OpenRouter
+rejects anything outside that list, so a model not on it produces a request that
+can only fail — which is why the app offers what the key permits rather than
+what looks good on the platform. `api/openrouter.ts` keeps the same list as its
+abuse guard, and `npm run check:models` (which `npm run build` runs first) fails
+the build if the two ever drift apart.
 
 The conversation persists — switching tabs or reloading no longer wipes it — and
 NOVA learns two different ways. **Memories** are durable things it was told: a
@@ -143,8 +150,8 @@ Voice in uses the browser's speech recognition; voice out is off by default.
 - **Anthropic** — the photo goes to `api.anthropic.com` and Claude identifies each
   component and estimates portions.
 - **OpenRouter** — the photo goes to `openrouter.ai`, routed to whichever
-  vision-capable model you pick (Claude Sonnet 5, Gemini 3.7 Flash, Nemotron 3
-  Nano Omni, Inkling, MiMo-V2.5, GLM-4.6V…).
+  vision-capable model you pick (Nemotron 3 Nano Omni, MiniMax M3, Gemma 4,
+  Inkling…).
 - **On-device** — no key and no network call: describe the plate, pick a portion
   size, and a bundled table of ~65 common foods does the arithmetic.
 

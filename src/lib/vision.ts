@@ -267,7 +267,12 @@ export async function analyzeWithClaude(
   return toAnalysis(parseReply(text), 'Analysed from the photo by Claude.')
 }
 
-export const DEFAULT_OPENROUTER_MODEL = 'anthropic/claude-sonnet-5'
+/**
+ * Photo analysis default. Nano Omni takes image input, is free, and is on the
+ * deployment key's allowed list — a paid Claude or Gemini default would be
+ * rejected by that key before it ever reached a model.
+ */
+export const DEFAULT_OPENROUTER_MODEL = 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
 
 /**
  * Vision analysis via OpenRouter's OpenAI-compatible endpoint, so any
