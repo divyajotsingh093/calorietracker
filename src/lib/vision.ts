@@ -268,7 +268,13 @@ export async function analyzeWithClaude(
 
 export const DEFAULT_OPENROUTER_MODEL = 'anthropic/claude-sonnet-4.5'
 
-/** A few vision-capable OpenRouter models, offered as a starting point. */
+/**
+ * Vision-capable OpenRouter models, offered as a starting point.
+ *
+ * Every entry here must accept image input. A text-only model would fail on
+ * every photo, so the assistant's own model is chosen separately — see
+ * OPENROUTER_CHAT_MODELS in lib/assistant.ts.
+ */
 export const OPENROUTER_MODELS = [
   'anthropic/claude-sonnet-4.5',
   'anthropic/claude-3.5-haiku',
@@ -276,6 +282,8 @@ export const OPENROUTER_MODELS = [
   'openai/gpt-4o-mini',
   'google/gemini-2.5-flash',
   'google/gemini-2.5-pro',
+  'z-ai/glm-4.6v',
+  'z-ai/glm-5v-turbo',
   'meta-llama/llama-4-scout',
   'qwen/qwen2.5-vl-72b-instruct',
 ]

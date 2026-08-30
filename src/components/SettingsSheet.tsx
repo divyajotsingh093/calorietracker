@@ -5,6 +5,7 @@ import { ThemeSection } from '@/components/ThemeControls'
 import { Button, Chip, Field, FieldGroup, Input, Modal, Select, cx } from '@/components/ui'
 import { dietLabel } from '@/lib/profiles'
 import { useStore } from '@/lib/store'
+import { DEFAULT_CHAT_MODEL, OPENROUTER_CHAT_MODELS } from '@/lib/assistant'
 import { DEFAULT_OPENROUTER_MODEL, OPENROUTER_MODELS } from '@/lib/vision'
 import type { VisionProvider } from '@/types'
 
@@ -99,13 +100,14 @@ export function SettingsSheet({
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {(
                   [
                     ['calorieGoal', 'Daily kcal', ''],
                     ['proteinGoal', 'Protein', 'g'],
                     ['carbGoal', 'Carbs', 'g'],
                     ['fatGoal', 'Fat', 'g'],
+                    ['fibreGoal', 'Fibre', 'g'],
                   ] as const
                 ).map(([key, label, unit]) => (
                   <Field key={key} label={unit ? `${label} (${unit})` : label}>
@@ -188,36 +190,22 @@ export function SettingsSheet({
                   autoComplete="off"
                 />
               </Field>
-              <Field label="Model" hint="Any vision-capable model slug on OpenRouter works.">
-                <Select
-                  value={
-                    OPENROUTER_MODELS.includes(settings.openrouterModel)
-                      ? settings.openrouterModel
-                      : 'custom'
-                  }
-                  onChange={(e) =>
-                    setSettings({
-                      openrouterModel:
-                        e.target.value === 'custom' ? '' : e.target.value,
-                    })
-                  }
-                >
-                  {OPENROUTER_MODELS.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                  <option value="custom">Something else…</option>
-                </Select>
-              </Field>
-              {!OPENROUTER_MODELS.includes(settings.openrouterModel) && (
-                <Input
-                  value={settings.openrouterModel}
-                  onChange={(e) => setSettings({ openrouterModel: e.target.value })}
-                  placeholder={DEFAULT_OPENROUTER_MODEL}
-                  autoComplete="off"
-                />
-              )}
+              <ModelPicker
+                label="Photo model"
+                hint="Must accept image input — a text-only model fails on every photo."
+                options={OPENROUTER_MODELS}
+                fallback={DEFAULT_OPENROUTER_MODEL}
+                value={settings.openrouterModel}
+                onChange={(openrouterModel) => setSettings({ openrouterModel })}
+              />
+              <ModelPicker
+                label="NOVA model"
+                hint="Needs tool calling and a long context; vision is not required."
+                options={OPENROUTER_CHAT_MODELS}
+                fallback={DEFAULT_CHAT_MODEL}
+                value={settings.openrouterChatModel}
+                onChange={(openrouterChatModel) => setSettings({ openrouterChatModel })}
+              />
             </>
           )}
         </div>
@@ -265,5 +253,54 @@ export function SettingsSheet({
         </div>
       </div>
     </Modal>
+  )
+}
+
+/**
+ * A model slug chosen from a shortlist, or typed in full. OpenRouter adds
+ * models constantly, so the list is a starting point rather than a limit —
+ * picking "Something else" clears the value and reveals a free-text field.
+ */
+function ModelPicker({
+  label,
+  hint,
+  options,
+  fallback,
+  value,
+  onChange,
+}: {
+  label: string
+  hint: string
+  options: string[]
+  fallback: string
+  value: string
+  onChange: (slug: string) => void
+}) {
+  const listed = options.includes(value)
+  return (
+    <>
+      <Field label={label} hint={hint}>
+        <Select
+          value={listed ? value : 'custom'}
+          onChange={(e) => onChange(e.target.value === 'custom' ? '' : e.target.value)}
+        >
+          {options.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+          <option value="custom">Something else…</option>
+        </Select>
+      </Field>
+      {!listed && (
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={fallback}
+          aria-label={`${label} slug`}
+          autoComplete="off"
+        />
+      )}
+    </>
   )
 }

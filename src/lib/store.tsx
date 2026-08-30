@@ -11,6 +11,7 @@ import {
 import { SEED_RECIPES } from '@/data/recipes'
 import { addDays, currentMondayISO } from '@/lib/date'
 import { DEFAULT_PROFILES } from '@/lib/profiles'
+import { DEFAULT_CHAT_MODEL } from '@/lib/assistant'
 import { DEFAULT_OPENROUTER_MODEL } from '@/lib/vision'
 import type {
   AppState,
@@ -33,6 +34,7 @@ const DEFAULT_SETTINGS: Settings = {
   apiKey: '',
   openrouterKey: '',
   openrouterModel: DEFAULT_OPENROUTER_MODEL,
+  openrouterChatModel: DEFAULT_CHAT_MODEL,
 }
 
 /** `[Ruchi, Dj]` when the two differ, one id when they eat the same thing. */

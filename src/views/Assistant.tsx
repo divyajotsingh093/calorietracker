@@ -16,6 +16,7 @@ import {
   answerLocally,
   askAnthropic,
   askOpenRouter,
+  DEFAULT_CHAT_MODEL,
   assistantProvider,
   buildContext,
   buildLibrary,
@@ -214,7 +215,7 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
               msgs,
               system,
               state.settings.openrouterKey.trim(),
-              state.settings.openrouterModel.trim(),
+              state.settings.openrouterChatModel.trim(),
             )
 
       try {
@@ -314,6 +315,13 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
           ? 'Standing by'
           : 'Local mode'
 
+  const engine =
+    provider === 'openrouter'
+      ? state.settings.openrouterChatModel.trim() || DEFAULT_CHAT_MODEL
+      : provider === 'anthropic'
+        ? 'anthropic'
+        : ''
+
   /* ─────────── live telemetry ─────────── */
 
   const telemetry = useMemo(
@@ -360,9 +368,9 @@ export function Assistant({ onOpenSettings }: { onOpenSettings: () => void }) {
                   animation: 'hud-blink 1.8s steps(1) infinite',
                 }}
               />
-              <span className="hud-label">
+              <span className="hud-label truncate">
                 {status}
-                {provider ? ` · ${provider}` : ''}
+                {engine ? ` · ${engine}` : ''}
               </span>
             </div>
           </div>

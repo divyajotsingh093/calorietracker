@@ -2,7 +2,6 @@ import { AISLE_ORDER } from '@/lib/grocery'
 import { dayTotals, macroSplit } from '@/lib/nutrition'
 import { longDate, todayISO } from '@/lib/date'
 import { suitsDiet } from '@/lib/profiles'
-import { DEFAULT_OPENROUTER_MODEL } from '@/lib/vision'
 import type { AppState, MealSlot, Profile, Recipe, Settings } from '@/types'
 
 export type Role = 'user' | 'assistant'
@@ -246,6 +245,25 @@ export function assistantProvider(settings: Settings): 'anthropic' | 'openrouter
   return null
 }
 
+/**
+ * Text models worth pointing NOVA at. These need tool calling and a long
+ * context — the whole dish library and the fortnight's plan go in every
+ * request — but not vision, so the list is deliberately different from the
+ * photo-analysis one.
+ */
+export const OPENROUTER_CHAT_MODELS = [
+  'z-ai/glm-5.2',
+  'z-ai/glm-5.3',
+  'z-ai/glm-4.7',
+  'anthropic/claude-sonnet-4.5',
+  'anthropic/claude-3.5-haiku',
+  'openai/gpt-4o',
+  'google/gemini-2.5-flash',
+]
+
+/** GLM 5.2: tool calling, a 1M-token context, and cheap enough to chat with. */
+export const DEFAULT_CHAT_MODEL = 'z-ai/glm-5.2'
+
 const MAX_TOKENS = 900
 
 export async function askAnthropic(
@@ -305,7 +323,7 @@ export async function askOpenRouter(
       'X-Title': 'Nourish meal tracker',
     },
     body: JSON.stringify({
-      model: model || DEFAULT_OPENROUTER_MODEL,
+      model: model || DEFAULT_CHAT_MODEL,
       max_tokens: MAX_TOKENS,
       messages: [{ role: 'system', content: system }, ...messages],
       tools: TOOLS.map((t) => ({

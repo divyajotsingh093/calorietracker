@@ -116,8 +116,14 @@ export interface Settings {
   apiKey: string
   /** OpenRouter key — stays in this browser, sent only to openrouter.ai. */
   openrouterKey: string
-  /** OpenRouter model slug, e.g. "anthropic/claude-sonnet-4.5". */
+  /** OpenRouter model slug for photo analysis — must accept image input. */
   openrouterModel: string
+  /**
+   * OpenRouter model slug for NOVA. Kept separate from the vision model
+   * because the best assistants here are text-only: GLM 5.2 does tool calls
+   * over a 1M-token context but cannot see a photograph.
+   */
+  openrouterChatModel: string
 }
 
 /** Which profile the app is currently showing. */

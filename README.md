@@ -99,6 +99,13 @@ refused by the app rather than trusted to the model, so nothing with meat, fish 
 egg reaches Ruchi's plan. Without an API key it still answers from your own data:
 what's planned, what's been eaten, what's left.
 
+On OpenRouter, NOVA has its own model setting, separate from the photo one.
+Photo analysis needs vision; NOVA needs tool calling and a long context but no
+vision at all, and the best models for that are text-only. It defaults to
+**GLM 5.2** (`z-ai/glm-5.2`) — tool calling over a 1M-token context, at a
+fraction of the price of a frontier model. Pick anything else from either list,
+or type a slug.
+
 Voice in uses the browser's speech recognition; voice out is off by default.
 
 **Snap & track** — photograph a meal, say who ate it, and log its calories:
@@ -106,7 +113,7 @@ Voice in uses the browser's speech recognition; voice out is off by default.
 - **Anthropic** — the photo goes to `api.anthropic.com` and Claude identifies each
   component and estimates portions.
 - **OpenRouter** — the photo goes to `openrouter.ai`, routed to whichever
-  vision-capable model you pick (Claude, GPT-4o, Gemini, Llama, Qwen…).
+  vision-capable model you pick (Claude, GPT-4o, Gemini, GLM-4.6V, Llama, Qwen…).
 - **On-device** — no key and no network call: describe the plate, pick a portion
   size, and a bundled table of ~65 common foods does the arithmetic.
 
