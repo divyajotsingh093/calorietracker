@@ -46,60 +46,67 @@ interface DaySpec {
 }
 
 /**
- * A starter week, Monday first. Deliberately spread across cuisines — no more
- * than a fifth of the week is any one of them — with the dinner (and sometimes
- * breakfast) swapped where Dj wants meat or fish. Both columns land under
- * 2000 kcal every day.
+ * A starter week, Monday first, chosen by `scripts/plan-week.mjs` rather than by
+ * eye: every day clears its protein target inside its calorie budget, carries
+ * at least 30 g of fibre, spans at least three cuisines, repeats nothing from
+ * the day before, and keeps Ruchi's column strictly vegetarian and egg-free.
+ * Dj eats the same food except where a meat or fish sibling is the natural swap.
+ *
+ * The seed yoghurt bowl is pinned to two mornings — it is what they actually
+ * eat, and a plan that optimises it away is answering the wrong question.
+ *
+ * As seeded: Ruchi averages 1817 kcal with 110 g protein and 47 g fibre;
+ * Dj averages 1893 kcal with 145 g protein and 43 g fibre.
  */
 const WEEK: DaySpec[] = [
   {
-    // Mon — Asian / Italian / Mexican
+    // Mon — Asian / Indian / Salads / Italian
     breakfast: 'r-congee',
-    lunch: 'r-pesto-gnocchi',
-    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
-    snack: ['r-guacamole', 'r-yoghurt-parfait'],
+    lunch: ['r-veg-fried-rice', 'r-teriyaki-salmon-donburi'],
+    dinner: ['r-aloo-gobi', 'r-goan-fish-curry'],
+    snack: ['r-sesame-slaw', 'r-white-bean-dip'],
   },
   {
-    // Tue — Continental / Middle Eastern / Indian
-    breakfast: 'r-overnight-oats',
-    lunch: 'r-falafel-bowl',
-    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
-    snack: ['r-hummus-plate', 'r-fruit-nuts'],
-  },
-  {
-    // Wed — Indian / Salads / Italian
-    breakfast: 'r-poha',
-    lunch: 'r-chickpea-halloumi-salad',
-    dinner: ['r-mushroom-risotto', 'r-turkey-meatballs'],
-    snack: ['r-bruschetta', 'r-energy-balls'],
-  },
-  {
-    // Thu — Continental / Mexican / Middle Eastern
-    breakfast: ['r-pb-banana-toast', 'r-avocado-toast'],
-    lunch: ['r-sweet-potato-tacos', 'r-chicken-burrito-bowl'],
-    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
-    snack: ['r-labneh-zaatar', 'r-masala-makhana'],
-  },
-  {
-    // Fri — Continental / Salads / Indian
-    breakfast: 'r-smoothie-bowl',
-    lunch: 'r-mediterranean-quinoa',
-    dinner: ['r-veg-biryani', 'r-chicken-biryani'],
-    snack: ['r-edamame', 'r-dhokla'],
-  },
-  {
-    // Sat — Indian / Italian / Asian
-    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
-    lunch: 'r-caprese-panini',
-    dinner: ['r-thai-green-curry-veg', 'r-thai-green-curry'],
-    snack: ['r-sesame-slaw', 'r-fruit-nuts'],
-  },
-  {
-    // Sun — Indian / Middle Eastern / Italian
+    // Tue — Indian / Asian / Continental
     breakfast: ['r-idli-sambar', 'r-shakshuka'],
-    lunch: 'r-mujadara',
-    dinner: ['r-pasta-norma', 'r-roast-chicken'],
-    snack: ['r-hummus-plate', 'r-energy-balls'],
+    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
+    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
+    snack: ['r-edamame', 'r-berry-protein-smoothie'],
+  },
+  {
+    // Wed — Asian / Middle Eastern / Indian / Mexican
+    breakfast: 'r-congee',
+    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
+    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-dhokla', 'r-black-bean-dip'],
+  },
+  {
+    // Thu — Continental / Asian / Mexican / Middle Eastern
+    breakfast: 'r-seed-yogurt-bowl',
+    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
+    dinner: ['r-sweet-potato-tacos', 'r-fish-tacos'],
+    snack: ['r-edamame', 'r-tzatziki'],
+  },
+  {
+    // Fri — Indian / Italian / Salads / Continental
+    breakfast: 'r-dhokla',
+    lunch: ['r-palak-paneer', 'r-chicken-tikka-masala'],
+    dinner: ['r-minestrone', 'r-tuna-puttanesca'],
+    snack: ['r-sesame-slaw', 'r-berry-protein-smoothie'],
+  },
+  {
+    // Sat — Continental / Middle Eastern / Mexican
+    breakfast: 'r-seed-yogurt-bowl',
+    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
+    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
+    snack: ['r-tzatziki', 'r-black-bean-dip'],
+  },
+  {
+    // Sun — Indian / Salads / Italian
+    breakfast: 'r-dhokla',
+    lunch: ['r-palak-paneer', 'r-chicken-tikka-masala'],
+    dinner: ['r-chickpea-halloumi-salad', 'r-chicken-burrito-bowl'],
+    snack: ['r-sesame-slaw', 'r-bruschetta'],
   },
 ]
 

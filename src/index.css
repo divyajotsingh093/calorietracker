@@ -85,6 +85,7 @@
   --data-protein: oklch(0.58 0.145 240);
   --data-carbs: oklch(0.60 0.145 148);
   --data-fat: oklch(0.635 0.155 55);
+  --data-fibre: oklch(0.52 0.09 300);
 
   --ok: oklch(0.55 0.15 150);
   --warn: oklch(0.565 0.15 62);
@@ -137,6 +138,7 @@
   --data-protein: oklch(0.795 0.115 238);
   --data-carbs: oklch(0.845 0.155 145);
   --data-fat: oklch(0.815 0.145 62);
+  --data-fibre: oklch(0.80 0.10 305);
 
   --ok: oklch(0.845 0.16 145);
   --warn: oklch(0.815 0.145 62);
@@ -291,6 +293,7 @@
   --color-protein: var(--data-protein);
   --color-carbs: var(--data-carbs);
   --color-fat: var(--data-fat);
+  --color-fibre: var(--data-fibre);
 
   --color-ok: var(--ok);
   --color-warn: var(--warn);

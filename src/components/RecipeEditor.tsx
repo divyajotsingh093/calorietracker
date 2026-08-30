@@ -33,9 +33,11 @@ const EMPTY: Recipe = {
   slots: ['dinner'],
   contains: [],
   calories: 500,
-  protein: 30,
-  carbs: 50,
+  protein: 35,
+  carbs: 45,
   fat: 18,
+  fibre: 8,
+  servingGrams: 350,
   minutes: 25,
   servings: 2,
   tags: [],
@@ -162,13 +164,15 @@ export function RecipeEditor({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {(
             [
               ['calories', 'Calories', 'kcal'],
               ['protein', 'Protein', 'g'],
               ['carbs', 'Carbs', 'g'],
               ['fat', 'Fat', 'g'],
+              ['fibre', 'Fibre', 'g'],
+              ['servingGrams', 'Portion', 'g'],
               ['minutes', 'Time', 'min'],
               ['servings', 'Servings', ''],
             ] as const

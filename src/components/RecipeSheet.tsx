@@ -57,6 +57,8 @@ export function RecipeCardMini({
           <span>·</span>
           <span className="tabular-nums">{recipe.protein}g P</span>
           <span>·</span>
+          <span className="tabular-nums">{recipe.servingGrams}g</span>
+          <span>·</span>
           <span>{recipe.cuisine}</span>
         </span>
       </span>
@@ -295,12 +297,28 @@ export function RecipeDetail({
       subtitle={`${recipe.cuisine} · ${recipe.calories} kcal per serving · ${recipe.minutes} min · makes ${recipe.servings}`}
     >
       <div className="space-y-6">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-2xl bg-panel-2 px-3.5 py-2.5">
+          <span className={cx('text-faint', 'text-[0.6875rem] font-medium uppercase tracking-[0.09em]')}>
+            One portion
+          </span>
+          <span className="text-[0.875rem] font-semibold tabular-nums">
+            ≈ {recipe.servingGrams} g
+          </span>
+          <span className="text-[0.8125rem] text-muted">
+            · {recipe.calories} kcal · {recipe.protein} g protein · {recipe.fibre} g fibre
+          </span>
+          <span className="ml-auto text-[0.75rem] text-faint">
+            recipe makes {recipe.servings}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-5 gap-2">
           {[
             { k: 'Calories', v: `${Math.round(recipe.calories)}`, u: 'kcal', c: 'text-accent-ink' },
             { k: 'Protein', v: `${recipe.protein}`, u: 'g', c: 'text-protein' },
             { k: 'Carbs', v: `${recipe.carbs}`, u: 'g', c: 'text-carbs' },
             { k: 'Fat', v: `${recipe.fat}`, u: 'g', c: 'text-fat' },
+            { k: 'Fibre', v: `${recipe.fibre}`, u: 'g', c: 'text-fibre' },
           ].map((m) => (
             <div key={m.k} className="glass rounded-2xl px-3 py-3 text-center">
               <div className={cx('font-display text-xl font-bold tabular-nums', m.c)}>
@@ -340,7 +358,7 @@ export function RecipeDetail({
         <div>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className={cx(t.micro, 'text-faint')}>
-              Ingredients
+              Ingredients for {portions} {portions === 1 ? 'serving' : 'servings'}
             </h3>
             <div className="flex items-center gap-2 text-[0.8125rem] text-muted">
               <span>Scale to</span>

@@ -11,6 +11,8 @@ export interface FoodRef {
   protein: number
   carbs: number
   fat: number
+  /** grams of fibre per 100 g; omitted where negligible */
+  fibre?: number
   /** typical serving in grams */
   serving: number
 }

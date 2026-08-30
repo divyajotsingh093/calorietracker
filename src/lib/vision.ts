@@ -8,6 +8,7 @@ export interface AnalysisItem {
   protein: number
   carbs: number
   fat: number
+  fibre: number
 }
 
 export interface Analysis {
@@ -16,6 +17,7 @@ export interface Analysis {
   protein: number
   carbs: number
   fat: number
+  fibre: number
   label: string
   note: string
   source: 'ai' | 'estimate' | 'manual'
@@ -90,6 +92,7 @@ function fromRef(ref: FoodRef, grams: number): AnalysisItem {
     protein: Math.round(ref.protein * f * 10) / 10,
     carbs: Math.round(ref.carbs * f * 10) / 10,
     fat: Math.round(ref.fat * f * 10) / 10,
+    fibre: Math.round((ref.fibre ?? 0) * f * 10) / 10,
   }
 }
 
@@ -100,8 +103,9 @@ function totals(items: AnalysisItem[]) {
       protein: a.protein + i.protein,
       carbs: a.carbs + i.carbs,
       fat: a.fat + i.fat,
+      fibre: a.fibre + (i.fibre ?? 0),
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fibre: 0 },
   )
 }
 
@@ -150,6 +154,7 @@ export function estimateFromText(description: string, portion: PortionSize): Ana
     protein: Math.round(t.protein),
     carbs: Math.round(t.carbs),
     fat: Math.round(t.fat),
+    fibre: Math.round(t.fibre),
     label: items.length ? items.map((i) => i.name).join(', ') : description.trim() || 'Meal',
     note,
     source: 'estimate',
@@ -157,7 +162,7 @@ export function estimateFromText(description: string, portion: PortionSize): Ana
 }
 
 const SYSTEM_PROMPT = `You are a nutrition estimator. Look at the photo of food and reply with ONLY a JSON object, no prose and no markdown fence:
-{"label":"short dish name","items":[{"name":"food","grams":000,"calories":000,"protein":0,"carbs":0,"fat":0}],"note":"one short sentence on assumptions and confidence"}
+{"label":"short dish name","items":[{"name":"food","grams":000,"calories":000,"protein":0,"carbs":0,"fat":0,"fibre":0}],"note":"one short sentence on assumptions and confidence"}
 Estimate portion sizes from visual cues (plate size, utensils, hands). Totals are summed from items, so make the items add up to the whole meal.`
 
 interface AnthropicResponse {
@@ -195,6 +200,7 @@ function toAnalysis(
     protein: Math.round((Number(i.protein) || 0) * 10) / 10,
     carbs: Math.round((Number(i.carbs) || 0) * 10) / 10,
     fat: Math.round((Number(i.fat) || 0) * 10) / 10,
+    fibre: Math.round((Number(i.fibre) || 0) * 10) / 10,
   }))
   const t = totals(items)
   return {
@@ -203,6 +209,7 @@ function toAnalysis(
     protein: Math.round(t.protein),
     carbs: Math.round(t.carbs),
     fat: Math.round(t.fat),
+    fibre: Math.round(t.fibre),
     label: parsed.label ?? 'Meal',
     note: parsed.note ?? fallbackNote,
     source: 'ai',

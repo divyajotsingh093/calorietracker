@@ -185,7 +185,9 @@ export function Recipes() {
                   <IconClock width={12} height={12} /> {r.minutes} min
                 </span>
                 <span>·</span>
-                <span>{r.ingredients.length} ingredients</span>
+                <span>{r.servingGrams}g portion</span>
+                <span>·</span>
+                <span>{r.fibre}g fibre</span>
                 <span>·</span>
                 <span>serves {r.servings}</span>
                 <span className="ml-auto flex items-center gap-1.5 text-faint">

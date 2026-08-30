@@ -8,9 +8,10 @@ export const DEFAULT_PROFILES: Profile[] = [
     accent: 'from-fuchsia-400 to-rose-400',
     diet: 'vegetarian',
     calorieGoal: 1850,
-    proteinGoal: 90,
-    carbGoal: 220,
-    fatGoal: 60,
+    proteinGoal: 110,
+    carbGoal: 210,
+    fatGoal: 62,
+    fibreGoal: 30,
   },
   {
     id: 'p-dj',
@@ -19,9 +20,10 @@ export const DEFAULT_PROFILES: Profile[] = [
     accent: 'from-sky-400 to-indigo-400',
     diet: 'omnivore',
     calorieGoal: 1950,
-    proteinGoal: 130,
-    carbGoal: 210,
+    proteinGoal: 140,
+    carbGoal: 200,
     fatGoal: 65,
+    fibreGoal: 30,
   },
 ]
 

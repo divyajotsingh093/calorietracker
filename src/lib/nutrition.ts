@@ -5,9 +5,10 @@ export interface Macros {
   protein: number
   carbs: number
   fat: number
+  fibre: number
 }
 
-export const ZERO: Macros = { calories: 0, protein: 0, carbs: 0, fat: 0 }
+export const ZERO: Macros = { calories: 0, protein: 0, carbs: 0, fat: 0, fibre: 0 }
 
 export function addMacros(a: Macros, b: Macros): Macros {
   return {
@@ -15,6 +16,7 @@ export function addMacros(a: Macros, b: Macros): Macros {
     protein: a.protein + b.protein,
     carbs: a.carbs + b.carbs,
     fat: a.fat + b.fat,
+    fibre: a.fibre + b.fibre,
   }
 }
 
@@ -24,11 +26,18 @@ export function scaleMacros(m: Macros, factor: number): Macros {
     protein: m.protein * factor,
     carbs: m.carbs * factor,
     fat: m.fat * factor,
+    fibre: m.fibre * factor,
   }
 }
 
 export function recipeMacros(r: Recipe): Macros {
-  return { calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat }
+  return {
+    calories: r.calories,
+    protein: r.protein,
+    carbs: r.carbs,
+    fat: r.fat,
+    fibre: r.fibre,
+  }
 }
 
 export function entryMacros(entry: PlanEntry, recipes: Map<string, Recipe>): Macros {

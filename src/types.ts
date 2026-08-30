@@ -38,11 +38,14 @@ export interface Recipe {
   slots: MealSlot[]
   /** Empty means suitable for everyone, including egg-free vegetarians. */
   contains: Contains[]
-  /** Per single serving */
+  /** Per single serving, computed from the ingredients by scripts/compute-nutrition.mjs */
   calories: number
   protein: number
   carbs: number
   fat: number
+  fibre: number
+  /** Weight of one serving in grams, so a portion is trackable */
+  servingGrams: number
   minutes: number
   servings: number
   tags: string[]
@@ -72,6 +75,7 @@ export interface Profile {
   proteinGoal: number
   carbGoal: number
   fatGoal: number
+  fibreGoal: number
 }
 
 export interface PlanEntry {
@@ -97,6 +101,7 @@ export interface PhotoLog {
   protein: number
   carbs: number
   fat: number
+  fibre: number
   source: 'ai' | 'estimate' | 'manual'
   note?: string
   createdAt: number

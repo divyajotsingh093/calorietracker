@@ -123,6 +123,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
       protein: result.protein,
       carbs: result.carbs,
       fat: result.fat,
+      fibre: result.fibre,
       source: result.source,
       note: result.note,
     })

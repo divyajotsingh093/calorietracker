@@ -240,6 +240,13 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                             <IconClock width={11} height={11} />
                             {group.recipe.minutes}m
                           </span>
+                          <span>·</span>
+                          <span
+                            className="tabular-nums"
+                            title="Weight of one portion, from the ingredients"
+                          >
+                            {Math.round(group.recipe.servingGrams * first.servings)}g
+                          </span>
                           {multi && group.entries.length === 1 && (
                             <>
                               <span>·</span>
@@ -447,12 +454,8 @@ function DaySummary({
             goal={profile.carbGoal}
             tone="carbs"
           />
-          <MacroBar
-            label="Fat"
-            value={eaten.fat}
-            goal={profile.fatGoal}
-            tone="fat"
-          />
+          <MacroBar label="Fat" value={eaten.fat} goal={profile.fatGoal} tone="fat" />
+          <MacroBar label="Fibre" value={eaten.fibre} goal={profile.fibreGoal} tone="fibre" />
           <div className="pt-1">
             <div className={cx('mb-1.5 text-faint', t.micro)}>Calorie split</div>
             <SplitBar protein={eaten.protein * 4} carbs={eaten.carbs * 4} fat={eaten.fat * 9} />

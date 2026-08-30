@@ -122,7 +122,7 @@ export function MacroBar({
   label: string
   value: number
   goal: number
-  tone: 'protein' | 'carbs' | 'fat'
+  tone: 'protein' | 'carbs' | 'fat' | 'fibre'
   unit?: string
 }) {
   const [armed, setArmed] = useState(false)
