@@ -7,6 +7,7 @@ import { dietLabel } from '@/lib/profiles'
 import { useStore } from '@/lib/store'
 import { DEFAULT_CHAT_MODEL } from '@/lib/assistant'
 import { CHAT_MODELS, VISION_MODELS, isTextOnly, type ModelOption } from '@/lib/models'
+import { readAccessCode, useServerKey, writeAccessCode } from '@/lib/serverKey'
 import { DEFAULT_OPENROUTER_MODEL } from '@/lib/vision'
 import type { VisionProvider } from '@/types'
 
@@ -46,7 +47,14 @@ export function SettingsSheet({
   }
 }) {
   const { state, setSettings, updateProfile, resetAll, importState } = useStore()
+  const server = useServerKey()
+  const [code, setCode] = useState(readAccessCode)
   const { settings } = state
+  // What is actually in use. Until someone picks, a deployment carrying its own
+  // key is the provider, so the chips must show that rather than the seeded
+  // default nobody chose.
+  const effective =
+    settings.providerChosen || !server.configured ? settings.visionProvider : 'openrouter'
   const [note, setNote] = useState('')
   const [confirmReset, setConfirmReset] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -150,8 +158,8 @@ export function SettingsSheet({
               {PROVIDERS.map((p) => (
                 <Chip
                   key={p.id}
-                  active={settings.visionProvider === p.id}
-                  onClick={() => setSettings({ visionProvider: p.id })}
+                  active={effective === p.id}
+                  onClick={() => setSettings({ visionProvider: p.id, providerChosen: true })}
                 >
                   {p.label}
                 </Chip>
@@ -159,10 +167,10 @@ export function SettingsSheet({
             </div>
           </FieldGroup>
           <p className="text-[0.8125rem] text-muted">
-            {PROVIDERS.find((p) => p.id === settings.visionProvider)?.blurb}
+            {PROVIDERS.find((p) => p.id === effective)?.blurb}
           </p>
 
-          {settings.visionProvider === 'anthropic' && (
+          {effective === 'anthropic' && (
             <Field
               label="Anthropic API key"
               hint="Kept in this browser only. Get one at console.anthropic.com."
@@ -177,10 +185,36 @@ export function SettingsSheet({
             </Field>
           )}
 
-          {settings.visionProvider === 'openrouter' && (
+          {effective === 'openrouter' && (
             <>
+              {server.configured && (
+                <p className="rounded-xl bg-ok-wash px-3 py-2.5 text-[0.8125rem] text-soft">
+                  This site has its own OpenRouter key, so it works here with nothing
+                  to paste. Add a personal key below to bill your own account instead —
+                  it stays in this browser and takes priority.
+                </p>
+              )}
+
+              {server.needsCode && !settings.openrouterKey.trim() && (
+                <Field
+                  label="Access code"
+                  hint="This site's key is behind a shared code. Entered once per browser."
+                >
+                  <Input
+                    type="password"
+                    value={code}
+                    onChange={(e) => {
+                      setCode(e.target.value)
+                      writeAccessCode(e.target.value)
+                    }}
+                    placeholder="••••••"
+                    autoComplete="off"
+                  />
+                </Field>
+              )}
+
               <Field
-                label="OpenRouter API key"
+                label={server.configured ? 'Your own OpenRouter key (optional)' : 'OpenRouter API key'}
                 hint="Kept in this browser only. Get one at openrouter.ai/keys."
               >
                 <Input

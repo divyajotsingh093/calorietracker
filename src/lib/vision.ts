@@ -1,4 +1,5 @@
 import { FOOD_REF, PORTION_SCALE, type FoodRef, type PortionSize } from '@/data/foods'
+import { PROXY_URL, readAccessCode } from '@/lib/serverKey'
 import type { Settings } from '@/types'
 
 export interface AnalysisItem {
@@ -278,14 +279,19 @@ export async function analyzeWithOpenRouter(
   model: string,
   hint: string,
 ): Promise<Analysis> {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  // Same rule as the assistant: a personal key goes straight to OpenRouter, and
+  // without one the request goes through this deployment's server-side proxy.
+  const viaProxy = !apiKey.trim()
+  const res = await fetch(viaProxy ? PROXY_URL : 'https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': window.location.origin,
-      'X-Title': 'Nourish meal tracker',
-    },
+    headers: viaProxy
+      ? { 'content-type': 'application/json', 'x-nova-access': readAccessCode() }
+      : {
+          'content-type': 'application/json',
+          authorization: `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Nourish meal tracker',
+        },
     body: JSON.stringify({
       model: model || DEFAULT_OPENROUTER_MODEL,
       max_tokens: 1024,
@@ -319,13 +325,18 @@ export async function analyzePhoto(
   settings: Settings,
   hint: string,
   portion: PortionSize,
+  serverKeyReady = false,
 ): Promise<Analysis> {
   // No photo (or no usable key) — fall back to the on-device table.
   if (!dataUrl) return estimateFromText(hint, portion)
   if (settings.visionProvider === 'anthropic' && settings.apiKey.trim()) {
     return analyzeWithClaude(dataUrl, settings.apiKey.trim(), hint)
   }
-  if (settings.visionProvider === 'openrouter' && settings.openrouterKey.trim()) {
+  const useOpenRouter =
+    (settings.visionProvider === 'openrouter' &&
+      (settings.openrouterKey.trim() || serverKeyReady)) ||
+    (!settings.providerChosen && serverKeyReady)
+  if (useOpenRouter) {
     return analyzeWithOpenRouter(
       dataUrl,
       settings.openrouterKey.trim(),
@@ -336,9 +347,11 @@ export async function analyzePhoto(
   return estimateFromText(hint, portion)
 }
 
-/** True when a real vision model is configured and usable. */
-export function visionReady(settings: Settings): boolean {
+/** True when a real vision model is reachable — a personal key or the server's. */
+export function visionReady(settings: Settings, serverKeyReady = false): boolean {
   if (settings.visionProvider === 'anthropic') return Boolean(settings.apiKey.trim())
-  if (settings.visionProvider === 'openrouter') return Boolean(settings.openrouterKey.trim())
-  return false
+  if (settings.visionProvider === 'openrouter')
+    return Boolean(settings.openrouterKey.trim()) || serverKeyReady
+  // nobody has picked yet and this deployment has a key — use it
+  return !settings.providerChosen && serverKeyReady
 }

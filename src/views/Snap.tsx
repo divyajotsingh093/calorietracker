@@ -6,6 +6,7 @@ import { PORTION_SCALE, type PortionSize } from '@/data/foods'
 import { longDate, todayISO } from '@/lib/date'
 import { SLOTS, SLOT_META } from '@/lib/slots'
 import { useStore } from '@/lib/store'
+import { useServerKey } from '@/lib/serverKey'
 import { analyzePhoto, compressImage, visionReady, type Analysis } from '@/lib/vision'
 import type { MealSlot } from '@/types'
 
@@ -29,7 +30,8 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
   const streamRef = useRef<MediaStream | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const hasVision = visionReady(state.settings)
+  const server = useServerKey()
+  const hasVision = visionReady(state.settings, server.configured)
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -94,7 +96,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
     setBusy(true)
     setError('')
     try {
-      setResult(await analyzePhoto(image ?? '', state.settings, hint, portion))
+      setResult(await analyzePhoto(image ?? '', state.settings, hint, portion, server.configured))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Analysis failed.')
     } finally {

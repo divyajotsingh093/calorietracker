@@ -118,6 +118,12 @@ export type VisionProvider = 'offline' | 'anthropic' | 'openrouter'
 
 export interface Settings {
   visionProvider: VisionProvider
+  /**
+   * Whether a person actually picked that provider. Until they do, a deployment
+   * carrying its own key is used automatically — but choosing On-device has to
+   * mean no network calls, so an explicit choice is never overridden.
+   */
+  providerChosen?: boolean
   /** Anthropic key — stays in this browser, sent only to api.anthropic.com. */
   apiKey: string
   /** OpenRouter key — stays in this browser, sent only to openrouter.ai. */

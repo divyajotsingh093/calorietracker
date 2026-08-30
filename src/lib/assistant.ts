@@ -2,6 +2,7 @@ import { AISLE_ORDER } from '@/lib/grocery'
 import { dayTotals, macroSplit } from '@/lib/nutrition'
 import { longDate, todayISO } from '@/lib/date'
 import { suitsDiet } from '@/lib/profiles'
+import { PROXY_URL, readAccessCode } from '@/lib/serverKey'
 import type { AppState, MealSlot, Memory, Profile, Recipe, Settings } from '@/types'
 
 export type Role = 'user' | 'assistant'
@@ -425,11 +426,22 @@ interface AnthropicBlock {
 
 export type WireMessage = { role: 'user' | 'assistant' | 'tool'; [k: string]: unknown }
 
-/** True when a model is configured; without one the local engine answers. */
-export function assistantProvider(settings: Settings): 'anthropic' | 'openrouter' | null {
+/**
+ * True when a model is reachable; without one the local engine answers.
+ *
+ * `serverKeyReady` comes from the one-shot probe of this deployment's proxy, so
+ * a browser with no personal key still gets a real model when the deployment
+ * carries one.
+ */
+export function assistantProvider(
+  settings: Settings,
+  serverKeyReady = false,
+): 'anthropic' | 'openrouter' | null {
   if (settings.visionProvider === 'anthropic' && settings.apiKey.trim()) return 'anthropic'
-  if (settings.visionProvider === 'openrouter' && settings.openrouterKey.trim())
+  if (settings.visionProvider === 'openrouter' && (settings.openrouterKey.trim() || serverKeyReady))
     return 'openrouter'
+  // nobody has picked yet and this deployment has a key — use it
+  if (!settings.providerChosen && serverKeyReady) return 'openrouter'
   return null
 }
 
@@ -497,20 +509,28 @@ interface OpenAIMessage {
   tool_calls?: OpenAIToolCall[]
 }
 
+/**
+ * With a personal key, the browser talks to OpenRouter directly. Without one it
+ * posts to this deployment's own proxy, which holds the key server-side — that
+ * is what lets the app work in a fresh browser with nothing pasted in.
+ */
 export async function askOpenRouter(
   messages: WireMessage[],
   system: string,
   apiKey: string,
   model: string,
 ): Promise<Reply> {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  const viaProxy = !apiKey.trim()
+  const res = await fetch(viaProxy ? PROXY_URL : 'https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${apiKey}`,
-      'HTTP-Referer': window.location.origin,
-      'X-Title': 'Nourish meal tracker',
-    },
+    headers: viaProxy
+      ? { 'content-type': 'application/json', 'x-nova-access': readAccessCode() }
+      : {
+          'content-type': 'application/json',
+          authorization: `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Nourish meal tracker',
+        },
     body: JSON.stringify({
       model: model || DEFAULT_CHAT_MODEL,
       max_tokens: MAX_TOKENS,

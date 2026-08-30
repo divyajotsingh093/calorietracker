@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets. .env.example is the committed template; real values live in Vercel.
+.env
+.env.*
+!.env.example
+.vercel

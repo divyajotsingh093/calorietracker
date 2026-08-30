@@ -35,6 +35,7 @@ import { todayISO } from '@/lib/date'
 import { dayTotals } from '@/lib/nutrition'
 import { averages, daySeries } from '@/lib/series'
 import { dietClash } from '@/lib/profiles'
+import { useServerKey } from '@/lib/serverKey'
 import { useListener, useVoice } from '@/lib/speech'
 import { ACCENTS, type Accent, type ThemeMode } from '@/lib/theme'
 import { useStore } from '@/lib/store'
@@ -76,7 +77,8 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const voice = useVoice()
-  const provider = assistantProvider(state.settings)
+  const server = useServerKey()
+  const provider = assistantProvider(state.settings, server.configured)
   const today = todayISO()
 
   /* ─────────── tools, run against the real store ─────────── */
@@ -612,7 +614,11 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
 
           <p className="hud-label mt-2.5 leading-relaxed">
             {provider
-              ? 'NOVA runs the app — plan, log, goals, screens and theme. It says what it changed.'
+              ? `NOVA runs the app — plan, log, goals, screens and theme. It says what it changed.${
+                  provider === 'openrouter' && !state.settings.openrouterKey.trim()
+                    ? ' Using this site’s own key.'
+                    : ''
+                }`
               : 'No model connected — answering from your own data. Add a key in Settings for the rest.'}
           </p>
             </div>

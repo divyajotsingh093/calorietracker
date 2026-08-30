@@ -168,9 +168,25 @@ Requires Node 20+.
   Settings has export/import for a JSON backup, plus a reset.
 - **Camera** — `getUserMedia` needs a secure context, so use `localhost` or HTTPS.
   Uploading works everywhere; on phones the file picker opens the camera directly.
-- **API keys** — stored only in your browser and sent only to the provider you
-  chose, for both photo analysis and NOVA. Leave the provider on *On-device* and
-  the app never makes a network call.
+- **API keys** — a personal key is stored only in your browser and sent only to
+  the provider you chose, for both photo analysis and NOVA. Choose *On-device*
+  and the app never makes a network call.
+- **A key for every session.** A deployment can carry its own OpenRouter key so
+  the app works in any browser with nothing to paste. Set `OPENROUTER_API_KEY` in
+  Vercel → Settings → Environment Variables; `api/openrouter.ts` reads it
+  server-side and forwards the request, so the key never reaches the browser.
+  It cannot be shipped any other way — this is a static client-side app, so a key
+  in the source or in a `VITE_` variable ends up inside the JavaScript bundle
+  every visitor downloads.
+
+  The endpoint only accepts the models listed in `lib/models.ts`, caps
+  `max_tokens`, and forwards nothing but the fields the app sends, since an open
+  passthrough lets a caller bill the most expensive model on the platform to
+  whoever owns the key. **Anyone who can reach the deployment can still spend its
+  credits**, so either set `NOVA_ACCESS_CODE` — the app then asks for it once per
+  browser — or put the deployment behind Vercel's Deployment Protection. A
+  personal key entered in Settings always takes priority and bypasses the proxy
+  entirely.
 - **Nutrition numbers** come from `scripts/ingredient-nutrition.mjs`, a per-100 g
   table covering every ingredient in the library; `compute-nutrition.mjs` derives
   each dish's macros, fibre and portion weight from its actual quantities and
@@ -206,11 +222,14 @@ src/
   lib/vision.ts         image compression, Anthropic + OpenRouter calls, offline estimator
   lib/assistant.ts      NOVA's context, tools, providers and on-device fallback
   lib/speech.ts         microphone dictation and spoken replies
+  lib/serverKey.ts      one-shot probe for a deployment key, and the access code
   lib/nutrition.ts      per-profile macro maths and daily totals
   lib/theme.ts          theme + accent tokens, persistence, no-flash boot
   index.css             the design system: type, tokens, both themes, motion
   views/                Today · Planner · Recipes · Grocery · Snap · Assistant
   components/           UI primitives, rings, profile bits, recipe sheets, settings, HUD
+api/
+  openrouter.ts         server-side proxy holding the deployment's OpenRouter key
 scripts/
   ingredient-nutrition.mjs  per-100 g values for every ingredient in the library
   compute-nutrition.mjs     derives each dish's macros and portion weight
