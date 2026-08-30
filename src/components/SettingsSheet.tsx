@@ -5,8 +5,9 @@ import { ThemeSection } from '@/components/ThemeControls'
 import { Button, Chip, Field, FieldGroup, Input, Modal, Select, cx } from '@/components/ui'
 import { dietLabel } from '@/lib/profiles'
 import { useStore } from '@/lib/store'
-import { DEFAULT_CHAT_MODEL, OPENROUTER_CHAT_MODELS } from '@/lib/assistant'
-import { DEFAULT_OPENROUTER_MODEL, OPENROUTER_MODELS } from '@/lib/vision'
+import { DEFAULT_CHAT_MODEL } from '@/lib/assistant'
+import { CHAT_MODELS, VISION_MODELS, isTextOnly, type ModelOption } from '@/lib/models'
+import { DEFAULT_OPENROUTER_MODEL } from '@/lib/vision'
 import type { VisionProvider } from '@/types'
 
 const PROVIDERS: { id: VisionProvider; label: string; blurb: string }[] = [
@@ -100,7 +101,7 @@ export function SettingsSheet({
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {(
                   [
                     ['calorieGoal', 'Daily kcal', ''],
@@ -193,15 +194,16 @@ export function SettingsSheet({
               <ModelPicker
                 label="Photo model"
                 hint="Must accept image input — a text-only model fails on every photo."
-                options={OPENROUTER_MODELS}
+                options={VISION_MODELS}
                 fallback={DEFAULT_OPENROUTER_MODEL}
                 value={settings.openrouterModel}
                 onChange={(openrouterModel) => setSettings({ openrouterModel })}
+                needsVision
               />
               <ModelPicker
                 label="NOVA model"
                 hint="Needs tool calling and a long context; vision is not required."
-                options={OPENROUTER_CHAT_MODELS}
+                options={CHAT_MODELS}
                 fallback={DEFAULT_CHAT_MODEL}
                 value={settings.openrouterChatModel}
                 onChange={(openrouterChatModel) => setSettings({ openrouterChatModel })}
@@ -268,15 +270,19 @@ function ModelPicker({
   fallback,
   value,
   onChange,
+  needsVision,
 }: {
   label: string
   hint: string
-  options: string[]
+  options: ModelOption[]
   fallback: string
   value: string
   onChange: (slug: string) => void
+  /** warn when a hand-typed slug is one we know rejects images */
+  needsVision?: boolean
 }) {
-  const listed = options.includes(value)
+  const listed = options.some((m) => m.slug === value)
+  const wrongKind = needsVision && !listed && isTextOnly(value)
   return (
     <>
       <Field label={label} hint={hint}>
@@ -285,8 +291,8 @@ function ModelPicker({
           onChange={(e) => onChange(e.target.value === 'custom' ? '' : e.target.value)}
         >
           {options.map((m) => (
-            <option key={m} value={m}>
-              {m}
+            <option key={m.slug} value={m.slug}>
+              {m.slug} — {m.note}
             </option>
           ))}
           <option value="custom">Something else…</option>
@@ -300,6 +306,12 @@ function ModelPicker({
           aria-label={`${label} slug`}
           autoComplete="off"
         />
+      )}
+      {wrongKind && (
+        <p className="text-[0.8125rem] text-warn">
+          {value} is text-only — it will reject every photo. Pick a model that
+          accepts image input.
+        </p>
       )}
     </>
   )

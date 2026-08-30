@@ -246,22 +246,12 @@ export function assistantProvider(settings: Settings): 'anthropic' | 'openrouter
 }
 
 /**
- * Text models worth pointing NOVA at. These need tool calling and a long
- * context — the whole dish library and the fortnight's plan go in every
- * request — but not vision, so the list is deliberately different from the
- * photo-analysis one.
+ * NOVA only ever sends text, so any model in the catalogue works. It does need
+ * tool calling and room for the whole dish library plus the fortnight's plan.
+ *
+ * GLM 5.2 is the default: tool calling over a 1M-token context, at a fraction
+ * of a frontier model's price.
  */
-export const OPENROUTER_CHAT_MODELS = [
-  'z-ai/glm-5.2',
-  'z-ai/glm-5.3',
-  'z-ai/glm-4.7',
-  'anthropic/claude-sonnet-4.5',
-  'anthropic/claude-3.5-haiku',
-  'openai/gpt-4o',
-  'google/gemini-2.5-flash',
-]
-
-/** GLM 5.2: tool calling, a 1M-token context, and cheap enough to chat with. */
 export const DEFAULT_CHAT_MODEL = 'z-ai/glm-5.2'
 
 const MAX_TOKENS = 900
