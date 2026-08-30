@@ -394,29 +394,46 @@ export function RecipeDetail({
           </ol>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+        <div className="flex flex-col items-start gap-3 border-t border-line pt-4">
           {recipe.video && (
-            <a href={recipe.video} target="_blank" rel="noreferrer noopener" className="inline-flex">
-              <Button variant="primary" size="sm">
-                <IconPlay width={15} height={15} />
-                Watch how it&apos;s made
-              </Button>
+            <a
+              href={recipe.video}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="lift flex w-full items-center gap-3 rounded-2xl border border-line bg-panel-2 p-3"
+            >
+              <span
+                className="grid size-10 shrink-0 place-items-center rounded-xl text-on-accent"
+                style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}
+              >
+                <IconPlay width={18} height={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[0.8125rem] font-semibold">Watch how it&apos;s made</span>
+                <span className="block truncate text-[0.75rem] text-muted">
+                  {recipe.videoTitle ?? recipe.video}
+                </span>
+              </span>
+              <IconLink width={15} height={15} className="shrink-0 text-faint" />
             </a>
           )}
-          {recipe.link && (
-            <a href={recipe.link} target="_blank" rel="noreferrer noopener" className="inline-flex">
-              <Button variant="soft" size="sm">
-                <IconLink width={15} height={15} />
-                {recipe.linkLabel ?? 'Open recipe'}
+
+          <div className="flex w-full flex-wrap items-center gap-2">
+            {recipe.link && (
+              <a href={recipe.link} target="_blank" rel="noreferrer noopener" className="inline-flex">
+                <Button variant="soft" size="sm">
+                  <IconLink width={15} height={15} />
+                  {recipe.linkLabel ?? 'Open recipe'}
+                </Button>
+              </a>
+            )}
+            {onEdit && (
+              <Button variant="ghost" size="sm" onClick={() => onEdit(recipe)}>
+                Edit dish &amp; video
               </Button>
-            </a>
-          )}
-          {onEdit && (
-            <Button variant="ghost" size="sm" onClick={() => onEdit(recipe)}>
-              Edit dish
-            </Button>
-          )}
-          <div className="ml-auto flex gap-2">{footer}</div>
+            )}
+            <div className="ml-auto flex gap-2">{footer}</div>
+          </div>
         </div>
       </div>
     </Modal>

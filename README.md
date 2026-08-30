@@ -68,12 +68,16 @@ one readable card per day. **Repeat into week 2** clones a whole week; each day
 has its own menu to copy it to tomorrow or next week. Bulk actions respect the
 current profile scope. Per-day calories flag anything over 2000.
 
-**Dish library** — 58 dishes across Indian, Asian, Middle Eastern, Italian,
+**Dish library** — 63 dishes across Indian, Asian, Middle Eastern, Italian,
 Continental, Mexican and salads, each tagged with what it contains (meat / fish /
 egg / dairy) so diet filtering is exact. Every dish has per-serving nutrition, a
 full ingredient list, a step-by-step method, a link to a written recipe **and a
-cooking video**. Add your own with the built-in editor; scale any recipe to the
-batch size you actually want to cook.
+specific cooking video**, searched out per dish and shown by title so you know
+what you're opening. Both links are editable on any dish. Add your own with the
+built-in editor; scale any recipe to the batch size you actually want to cook.
+
+The starter fortnight is spread deliberately across cuisines — no single one is
+more than a fifth of the week — so the plan doesn't drift into one kind of food.
 
 **Grocery list** — everything planned for a week and for whoever is in scope,
 rolled up per ingredient, de-duplicated and sorted by supermarket aisle.
@@ -114,10 +118,12 @@ Requires Node 20+.
   chose. Leave the provider on *On-device* and the app never makes a network call.
 - **Nutrition numbers** are reference estimates for planning, not medical or
   dietetic advice. Photo estimates especially are a starting point — adjust them.
-- **Recipe and video links** point at a search — on a well-known recipe site, and
-  on YouTube — rather than at one specific page or video ID. A hand-picked video ID
-  goes dead or drifts to unrelated content; a search always resolves and always
-  shows current results. Paste your own URL on any dish to replace either.
+- **Videos** were researched per dish and point at specific videos, mostly from
+  well-known cooking channels. They were found through search and were not
+  fetch-verified one by one, so the odd one may have been taken down — every dish
+  has an editable video URL and title for exactly that reason.
+- **Written recipe links** still point at a search on a reputable recipe site, so
+  they don't rot. Paste your own URL on any dish to replace either link.
 - **Drag-and-drop** on the planner is HTML5 drag, so it's desktop-only. On a phone
   you add and remove meals per day instead.
 

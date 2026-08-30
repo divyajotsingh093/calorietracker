@@ -46,52 +46,60 @@ interface DaySpec {
 }
 
 /**
- * A starter week, Monday first. Mostly shared meals, with the dinner (and
- * sometimes breakfast) swapped where Dj wants meat or fish. Both columns land
- * comfortably under 2000 kcal a day.
+ * A starter week, Monday first. Deliberately spread across cuisines — no more
+ * than a fifth of the week is any one of them — with the dinner (and sometimes
+ * breakfast) swapped where Dj wants meat or fish. Both columns land under
+ * 2000 kcal every day.
  */
 const WEEK: DaySpec[] = [
   {
-    breakfast: 'r-poha',
-    lunch: 'r-falafel-bowl',
-    dinner: 'r-palak-paneer',
-    snack: ['r-yoghurt-parfait', 'r-masala-makhana'],
+    // Mon — Asian / Italian / Mexican
+    breakfast: 'r-congee',
+    lunch: 'r-pesto-gnocchi',
+    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-guacamole', 'r-yoghurt-parfait'],
   },
   {
-    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
-    lunch: 'r-mediterranean-quinoa',
-    dinner: ['r-thai-green-curry-veg', 'r-thai-green-curry'],
+    // Tue — Continental / Middle Eastern / Indian
+    breakfast: 'r-overnight-oats',
+    lunch: 'r-falafel-bowl',
+    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
     snack: ['r-hummus-plate', 'r-fruit-nuts'],
   },
   {
-    breakfast: 'r-overnight-oats',
-    lunch: 'r-minestrone',
-    dinner: ['r-pasta-norma', 'r-turkey-meatballs'],
-    snack: ['r-energy-balls', 'r-yoghurt-parfait'],
-  },
-  {
-    breakfast: 'r-idli-sambar',
-    lunch: 'r-chana-masala',
-    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
-    snack: ['r-masala-makhana', 'r-fruit-nuts'],
-  },
-  {
-    breakfast: 'r-smoothie-bowl',
-    lunch: 'r-fattoush-halloumi',
-    dinner: ['r-sweet-potato-tacos', 'r-fish-tacos'],
-    snack: ['r-dhokla', 'r-yoghurt-parfait'],
-  },
-  {
-    breakfast: ['r-pb-banana-toast', 'r-avocado-toast'],
+    // Wed — Indian / Salads / Italian
+    breakfast: 'r-poha',
     lunch: 'r-chickpea-halloumi-salad',
-    dinner: ['r-veg-biryani', 'r-chicken-biryani'],
-    snack: ['r-energy-balls', 'r-hummus-plate'],
+    dinner: ['r-mushroom-risotto', 'r-turkey-meatballs'],
+    snack: ['r-bruschetta', 'r-energy-balls'],
   },
   {
-    breakfast: ['r-besan-chilla', 'r-shakshuka'],
+    // Thu — Continental / Mexican / Middle Eastern
+    breakfast: ['r-pb-banana-toast', 'r-avocado-toast'],
+    lunch: ['r-sweet-potato-tacos', 'r-chicken-burrito-bowl'],
+    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
+    snack: ['r-labneh-zaatar', 'r-masala-makhana'],
+  },
+  {
+    // Fri — Continental / Salads / Indian
+    breakfast: 'r-smoothie-bowl',
+    lunch: 'r-mediterranean-quinoa',
+    dinner: ['r-veg-biryani', 'r-chicken-biryani'],
+    snack: ['r-edamame', 'r-dhokla'],
+  },
+  {
+    // Sat — Indian / Italian / Asian
+    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
+    lunch: 'r-caprese-panini',
+    dinner: ['r-thai-green-curry-veg', 'r-thai-green-curry'],
+    snack: ['r-sesame-slaw', 'r-fruit-nuts'],
+  },
+  {
+    // Sun — Indian / Middle Eastern / Italian
+    breakfast: ['r-idli-sambar', 'r-shakshuka'],
     lunch: 'r-mujadara',
-    dinner: ['r-mushroom-risotto', 'r-roast-chicken'],
-    snack: ['r-sesame-slaw', 'r-masala-makhana'],
+    dinner: ['r-pasta-norma', 'r-roast-chicken'],
+    snack: ['r-hummus-plate', 'r-energy-balls'],
   },
 ]
 

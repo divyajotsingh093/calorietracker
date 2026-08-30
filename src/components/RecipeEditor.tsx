@@ -44,6 +44,7 @@ const EMPTY: Recipe = {
   link: '',
   linkLabel: '',
   video: '',
+  videoTitle: '',
   custom: true,
 }
 
@@ -87,6 +88,7 @@ export function RecipeEditor({
       tags: draft.tags.map((t) => t.trim().toLowerCase()).filter(Boolean),
       link: draft.link?.trim() || undefined,
       video: draft.video?.trim() || undefined,
+      videoTitle: draft.video?.trim() ? draft.videoTitle?.trim() || undefined : undefined,
       linkLabel: draft.link?.trim() ? draft.linkLabel?.trim() || 'Open recipe' : undefined,
     }
     onSave(cleaned)
@@ -308,13 +310,22 @@ export function RecipeEditor({
           />
         </Field>
 
-        <Field label="Video link" hint="A cooking video for this dish.">
-          <Input
-            value={draft.video ?? ''}
-            onChange={(e) => set('video', e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=…"
-          />
-        </Field>
+        <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
+          <Field label="Video link" hint="Paste any cooking video you prefer.">
+            <Input
+              value={draft.video ?? ''}
+              onChange={(e) => set('video', e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=…"
+            />
+          </Field>
+          <Field label="Video title" hint="Shown on the dish so you know what opens.">
+            <Input
+              value={draft.videoTitle ?? ''}
+              onChange={(e) => set('videoTitle', e.target.value)}
+              placeholder="Palak Paneer — Kunal Kapur"
+            />
+          </Field>
+        </div>
 
         <div className="grid gap-3 sm:grid-cols-[1fr_12rem]">
           <Field label="Recipe link">
