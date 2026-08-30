@@ -12,6 +12,20 @@ export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(' ')
 }
 
+/* ─────────────────────────── Type scale ───────────────────────────
+   Six steps, each with its own tracking. Display sizes tighten as they
+   grow; the micro step is the only one that gets letterspaced out.      */
+
+export const type = {
+  displayXl: 'font-display text-[2rem] sm:text-[2.5rem] font-semibold leading-[1.05]',
+  displayL: 'font-display text-[1.5rem] sm:text-[1.75rem] font-semibold leading-[1.12]',
+  displayM: 'font-display text-[1.125rem] font-semibold leading-[1.2]',
+  title: 'text-[0.9375rem] font-semibold leading-[1.35]',
+  body: 'text-[0.875rem] leading-[1.55]',
+  small: 'text-[0.8125rem] leading-[1.45]',
+  micro: 'text-[0.6875rem] font-medium uppercase tracking-[0.09em]',
+} as const
+
 export function Card({
   className,
   children,
@@ -21,7 +35,7 @@ export function Card({
     <div
       {...rest}
       className={cx(
-        'glass min-w-0 rounded-3xl shadow-[0_18px_60px_-24px_rgba(0,0,0,0.8)]',
+        'glass min-w-0 rounded-[1.5rem] transition-[background-color,border-color,box-shadow] duration-300',
         className,
       )}
     >
@@ -38,20 +52,20 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 export function Button({ variant = 'soft', size = 'md', className, ...rest }: ButtonProps) {
   const variants = {
     primary:
-      'bg-gradient-to-br from-lime-300 to-emerald-400 text-ink-950 font-semibold hover:brightness-110 shadow-[0_10px_30px_-12px_oklch(0.86_0.19_128/0.9)]',
-    soft: 'glass text-white/90 hover:bg-white/12',
-    ghost: 'text-white/60 hover:text-white hover:bg-white/8',
-    danger: 'bg-rose-500/15 text-rose-200 border border-rose-400/25 hover:bg-rose-500/25',
+      'bg-gradient-to-br from-accent to-accent-2 text-on-accent font-semibold shadow-e2 hover:brightness-[1.07] hover:shadow-e3',
+    soft: 'bg-panel border border-line text-soft shadow-e1 hover:bg-panel-2 hover:text-ink hover:shadow-e2',
+    ghost: 'text-muted hover:bg-fill hover:text-ink',
+    danger: 'bg-danger-wash text-danger border border-danger/25 hover:bg-danger hover:text-on-accent',
   }
   const sizes = {
-    sm: 'px-3 py-1.5 text-[13px] gap-1.5 rounded-xl',
-    md: 'px-4 py-2.5 text-sm gap-2 rounded-2xl',
+    sm: 'px-3 py-1.5 text-[0.8125rem] gap-1.5 rounded-xl',
+    md: 'px-4 py-2.5 text-[0.875rem] gap-2 rounded-2xl',
   }
   return (
     <button
       {...rest}
       className={cx(
-        'inline-flex items-center justify-center transition active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none cursor-pointer',
+        'press inline-flex cursor-pointer items-center justify-center font-medium disabled:pointer-events-none disabled:opacity-40',
         variants[variant],
         sizes[size],
         className,
@@ -69,10 +83,10 @@ export function Chip({
     <button
       {...rest}
       className={cx(
-        'px-3 py-1.5 rounded-full text-[13px] font-medium transition whitespace-nowrap cursor-pointer',
+        'press cursor-pointer whitespace-nowrap rounded-full px-3.5 py-1.5 text-[0.8125rem] font-medium',
         active
-          ? 'bg-white text-ink-950 shadow-[0_6px_20px_-8px_rgba(255,255,255,0.7)]'
-          : 'glass text-white/65 hover:text-white hover:bg-white/12',
+          ? 'bg-invert text-on-invert shadow-e2'
+          : 'border border-line bg-panel text-muted hover:border-line-strong hover:text-ink',
         className,
       )}
     />
@@ -83,7 +97,7 @@ export function Tag({ children, className }: { children: ReactNode; className?: 
   return (
     <span
       className={cx(
-        'inline-flex items-center rounded-full bg-white/8 px-2 py-0.5 text-[11px] tracking-wide text-white/60',
+        'inline-flex items-center rounded-full bg-fill px-2 py-0.5 text-[0.6875rem] font-medium tracking-[0.01em] text-muted',
         className,
       )}
     >
@@ -103,11 +117,9 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[12px] font-medium uppercase tracking-[0.08em] text-white/45">
-        {label}
-      </span>
+      <span className={cx('mb-1.5 block text-faint', type.micro)}>{label}</span>
       {children}
-      {hint && <span className="mt-1.5 block text-[12px] text-white/40">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-[0.75rem] text-faint">{hint}</span>}
     </label>
   )
 }
@@ -127,34 +139,29 @@ export function FieldGroup({
 }) {
   return (
     <div role="group" aria-label={label}>
-      <div className="mb-1.5 text-[12px] font-medium uppercase tracking-[0.08em] text-white/45">
-        {label}
-      </div>
+      <div className={cx('mb-1.5 text-faint', type.micro)}>{label}</div>
       {children}
-      {hint && <p className="mt-1.5 text-[12px] text-white/40">{hint}</p>}
+      {hint && <p className="mt-1.5 text-[0.75rem] text-faint">{hint}</p>}
     </div>
   )
 }
 
 const inputBase =
-  'w-full rounded-2xl bg-white/6 border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-lime-300/50 focus:bg-white/10'
+  'w-full rounded-2xl border border-line bg-panel px-3.5 py-2.5 text-[0.875rem] text-ink shadow-e1 outline-none transition placeholder:text-faint focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-wash)]'
 
 export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...rest} className={cx(inputBase, className)} />
 }
 
-export function Textarea({
-  className,
-  ...rest
-}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...rest} className={cx(inputBase, 'resize-y min-h-24', className)} />
+export function Textarea({ className, ...rest }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea {...rest} className={cx(inputBase, 'min-h-24 resize-y', className)} />
 }
 
 export function Select({ className, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       {...rest}
-      className={cx(inputBase, 'cursor-pointer [&>option]:bg-ink-900 [&>option]:text-white', className)}
+      className={cx(inputBase, 'cursor-pointer [&>option]:bg-panel [&>option]:text-ink', className)}
     />
   )
 }
@@ -195,20 +202,20 @@ export function Modal({
       <button
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 cursor-default bg-ink-950/80 backdrop-blur-md"
+        className="animate-veil absolute inset-0 cursor-default bg-ink/35 backdrop-blur-[3px]"
       />
       <div
         role="dialog"
         aria-modal="true"
         className={cx(
-          'animate-pop relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-white/12 bg-ink-900/97 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl sm:rounded-3xl',
+          'animate-sheet glass-strong relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[1.75rem] shadow-e4 sm:rounded-[1.75rem]',
           wide ? 'sm:max-w-3xl' : 'sm:max-w-lg',
         )}
       >
-        <div className="flex items-start gap-4 border-b border-white/10 px-5 py-4 sm:px-6">
+        <div className="flex items-start gap-4 border-b border-line px-5 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
-            <h2 className="font-display text-lg font-semibold tracking-tight">{title}</h2>
-            {subtitle && <p className="mt-0.5 text-[13px] text-white/50">{subtitle}</p>}
+            <h2 className={type.displayM}>{title}</h2>
+            {subtitle && <p className="mt-0.5 text-[0.8125rem] text-muted">{subtitle}</p>}
           </div>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
             <IconX width={18} height={18} />
@@ -223,10 +230,10 @@ export function Modal({
 
 export function Empty({ emoji, title, hint }: { emoji: string; title: string; hint?: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 py-14 text-center">
-      <span className="text-4xl opacity-70">{emoji}</span>
-      <p className="font-display text-base font-semibold text-white/80">{title}</p>
-      {hint && <p className="max-w-xs text-[13px] text-white/40">{hint}</p>}
+    <div className="animate-rise flex flex-col items-center gap-2 py-14 text-center">
+      <span className="animate-float text-4xl opacity-80">{emoji}</span>
+      <p className={cx(type.displayM, 'text-soft')}>{title}</p>
+      {hint && <p className="max-w-xs text-[0.8125rem] text-faint">{hint}</p>}
     </div>
   )
 }

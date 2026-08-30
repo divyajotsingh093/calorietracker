@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Avatar } from '@/components/ProfileBits'
 import { IconCamera, IconCheck, IconSparkle, IconTrash, IconUpload, IconX } from '@/components/icons'
-import { Button, Card, Chip, Empty, Field, FieldGroup, Input, Select, Tag, cx } from '@/components/ui'
+import { Button, Card, Chip, Empty, Field, FieldGroup, Input, Select, Tag, cx, type as t } from '@/components/ui'
 import { PORTION_SCALE, type PortionSize } from '@/data/foods'
 import { longDate, todayISO } from '@/lib/date'
 import { SLOTS, SLOT_META } from '@/lib/slots'
@@ -139,15 +139,15 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
   return (
     <div className="animate-rise space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Snap & track</h1>
-        <p className="mt-0.5 text-[13px] text-white/45">
+        <h1 className={t.displayXl}>Snap & track</h1>
+        <p className="mt-0.5 text-[0.8125rem] text-muted">
           Photograph a meal and log its calories.{' '}
           {hasVision ? (
             <>
               Reading photos with{' '}
               <button
                 onClick={onOpenSettings}
-                className="text-lime-300 underline underline-offset-2 cursor-pointer"
+                className="text-accent-ink underline underline-offset-2 cursor-pointer"
               >
                 {state.settings.visionProvider === 'anthropic'
                   ? 'Claude'
@@ -160,7 +160,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
               Running on the built-in food table —{' '}
               <button
                 onClick={onOpenSettings}
-                className="text-lime-300 underline underline-offset-2 cursor-pointer"
+                className="text-accent-ink underline underline-offset-2 cursor-pointer"
               >
                 connect Anthropic or OpenRouter
               </button>{' '}
@@ -171,7 +171,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
       </div>
 
       {error && (
-        <p className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-4 py-3 text-[13px] text-rose-200">
+        <p className="rounded-2xl border border-danger/30 bg-danger-wash px-4 py-3 text-[13px] text-danger">
           {error}
         </p>
       )}
@@ -179,7 +179,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Capture panel */}
         <Card className="overflow-hidden">
-          <div className="relative aspect-[4/3] w-full bg-ink-900">
+          <div className="relative aspect-[4/3] w-full bg-panel">
             {cameraOn ? (
               <>
                 <video
@@ -188,16 +188,16 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                   muted
                   className="size-full object-cover"
                 />
-                <div className="absolute inset-0 flex items-end justify-center gap-3 bg-gradient-to-t from-ink-950/80 to-transparent p-5">
+                <div className="absolute inset-0 flex items-end justify-center gap-3 bg-gradient-to-t from-bg to-transparent p-5">
                   <Button variant="ghost" onClick={stopCamera}>
                     <IconX width={17} height={17} /> Cancel
                   </Button>
                   <button
                     onClick={shoot}
                     aria-label="Take photo"
-                    className="grid size-16 place-items-center rounded-full border-4 border-white/80 bg-white/20 backdrop-blur transition hover:bg-white/40 active:scale-95 cursor-pointer"
+                    className="grid size-16 place-items-center rounded-full border-4 border-invert bg-invert/25 backdrop-blur transition hover:bg-fill-strong active:scale-95 cursor-pointer"
                   >
-                    <span className="size-11 rounded-full bg-white" />
+                    <span className="size-11 rounded-full bg-invert" />
                   </button>
                 </div>
               </>
@@ -207,7 +207,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                 <button
                   onClick={reset}
                   aria-label="Discard photo"
-                  className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-ink-950/70 text-white/80 backdrop-blur transition hover:bg-ink-950 cursor-pointer"
+                  className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-ink/45 text-soft backdrop-blur transition hover:bg-bg cursor-pointer"
                 >
                   <IconX width={18} height={18} />
                 </button>
@@ -215,7 +215,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
             ) : (
               <div className="flex size-full flex-col items-center justify-center gap-4 p-6 text-center">
                 <span className="animate-float text-5xl">📸</span>
-                <p className="max-w-xs text-[13px] text-white/45">
+                <p className="max-w-xs text-[0.8125rem] text-muted">
                   Point the camera at your plate, or pick a photo you already took.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
@@ -243,7 +243,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
           />
 
           {stage === 'review' && (
-            <div className="space-y-4 border-t border-white/10 p-4 sm:p-5">
+            <div className="space-y-4 border-t border-line p-4 sm:p-5">
               <Field
                 label={hasVision ? 'Anything worth mentioning?' : 'What is on the plate?'}
                 hint={
@@ -295,19 +295,19 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                 <h2 className="font-display text-lg font-semibold capitalize tracking-tight">
                   {result.label}
                 </h2>
-                <p className="mt-1 text-[13px] text-white/45">{result.note}</p>
+                <p className="mt-1 text-[0.8125rem] text-muted">{result.note}</p>
               </div>
 
               <div className="grid grid-cols-4 gap-2">
                 {(
                   [
-                    ['calories', 'kcal', 'text-lime-200'],
-                    ['protein', 'protein', 'text-sky-200'],
-                    ['carbs', 'carbs', 'text-amber-200'],
-                    ['fat', 'fat', 'text-orange-200'],
+                    ['calories', 'kcal', 'text-accent-ink'],
+                    ['protein', 'protein', 'text-protein'],
+                    ['carbs', 'carbs', 'text-carbs'],
+                    ['fat', 'fat', 'text-fat'],
                   ] as const
                 ).map(([key, label, colour]) => (
-                  <div key={key} className="rounded-2xl bg-white/6 p-2 text-center">
+                  <div key={key} className="rounded-2xl bg-fill p-2 text-center">
                     <input
                       type="number"
                       min={0}
@@ -318,7 +318,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                         colour,
                       )}
                     />
-                    <div className="text-[10px] uppercase tracking-[0.08em] text-white/35">
+                    <div className="text-[10px] uppercase tracking-[0.08em] text-faint">
                       {label}
                     </div>
                   </div>
@@ -327,18 +327,18 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
 
               {result.items.length > 0 && (
                 <div>
-                  <h3 className="mb-2 text-[12px] font-medium uppercase tracking-[0.08em] text-white/45">
+                  <h3 className="mb-2 text-[12px] font-medium uppercase tracking-[0.08em] text-muted">
                     Detected
                   </h3>
                   <ul className="space-y-1.5">
                     {result.items.map((i, idx) => (
                       <li
                         key={`${i.name}-${idx}`}
-                        className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2 text-sm"
+                        className="flex items-center gap-3 rounded-xl bg-fill px-3 py-2 text-sm"
                       >
-                        <span className="flex-1 capitalize text-white/85">{i.name}</span>
-                        <span className="text-[12px] tabular-nums text-white/40">{i.grams} g</span>
-                        <span className="text-[13px] tabular-nums text-lime-200/80">
+                        <span className="flex-1 capitalize text-ink">{i.name}</span>
+                        <span className="text-[12px] tabular-nums text-faint">{i.grams} g</span>
+                        <span className="text-[13px] tabular-nums text-accent-ink">
                           {i.calories} kcal
                         </span>
                       </li>
@@ -357,8 +357,8 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                         className={cx(
                           'flex items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-[13px] transition cursor-pointer',
                           who === p.id
-                            ? 'bg-white text-ink-950 font-medium'
-                            : 'glass text-white/55 hover:text-white',
+                            ? 'bg-invert text-on-accent font-medium'
+                            : 'glass text-muted hover:text-ink',
                         )}
                       >
                         <Avatar profile={p} size="sm" />
@@ -410,13 +410,13 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
 
       {/* History */}
       <Card className="p-4 sm:p-5">
-        <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.1em] text-white/60">
+        <h2 className={cx(t.micro, 'mb-3 text-faint')}>
           Recent snaps
         </h2>
         {recent.length ? (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {recent.map((p) => (
-              <div key={p.id} className="group relative overflow-hidden rounded-2xl bg-white/5">
+              <div key={p.id} className="group relative overflow-hidden rounded-2xl bg-fill">
                 {p.image ? (
                   <img src={p.image} alt={p.label} className="aspect-[4/3] w-full object-cover" />
                 ) : (
@@ -427,14 +427,14 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
                 <button
                   aria-label="Delete"
                   onClick={() => removePhoto(p.id)}
-                  className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-ink-950/70 text-white/70 opacity-0 backdrop-blur transition hover:text-rose-300 group-hover:opacity-100 cursor-pointer"
+                  className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-ink/45 text-soft opacity-0 backdrop-blur transition hover:text-danger group-hover:opacity-100 cursor-pointer"
                 >
                   <IconTrash width={15} height={15} />
                 </button>
                 <div className="p-3">
                   <div className="truncate text-sm font-medium capitalize">{p.label}</div>
-                  <div className="mt-1 flex items-center gap-2 text-[12px] text-white/45">
-                    <span className="tabular-nums text-lime-200/80">{p.calories} kcal</span>
+                  <div className="mt-1 flex items-center gap-2 text-[0.75rem] text-muted">
+                    <span className="tabular-nums text-accent-ink">{p.calories} kcal</span>
                     <span>·</span>
                     <span>{SLOT_META[p.slot].label}</span>
                   </div>
@@ -448,7 +448,7 @@ export function Snap({ onOpenSettings }: { onOpenSettings: () => void }) {
             ))}
           </div>
         ) : (
-          <p className="py-6 text-center text-[13px] text-white/35">
+          <p className="py-6 text-center text-[0.8125rem] text-faint">
             Meals you snap show up here and count towards the day&apos;s total.
           </p>
         )}

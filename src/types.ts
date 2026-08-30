@@ -51,6 +51,8 @@ export interface Recipe {
   steps: string[]
   link?: string
   linkLabel?: string
+  /** A cooking video for the dish. */
+  video?: string
   custom?: boolean
 }
 

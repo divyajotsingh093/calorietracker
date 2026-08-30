@@ -7,6 +7,34 @@ shopping list build itself from whatever is on the plan.
 
 Everything lives in the browser — no account, no server, no data leaving the device.
 
+## Design
+
+**Type.** Two self-hosted variable faces, no CDN and no FOUT. *Fraunces* — a serif
+with optical-size, SOFT and WONK axes — carries the display sizes; its optical
+axis keeps 40px headings tight and 18px ones readable without manual tracking.
+*Inter* handles every piece of UI text and, with tabular figures switched on,
+every number: an app this full of calories needs digits that line up in columns.
+
+**Themes.** Light is the default — a warm paper ground rather than clinical white,
+so the accent washes and food emoji sit comfortably on it. Dark, and follow-the-OS,
+are one tap away and survive a reload; a tiny inline script applies the stored
+choice before first paint so the page never flashes the wrong theme.
+
+Five accent palettes — Matcha, Citrus, Berry, Ocean and Grape — repaint the primary
+action, the calorie ring, the active nav state and the page's background wash.
+Every colour is a semantic token (`--ink`, `--panel`, `--accent`, `--data-carbs`),
+so a palette swap never touches a component.
+
+**Contrast is measured, not asserted.** Thirteen foreground/background pairs are
+checked across both themes and all five accents — 130 combinations, all clearing
+WCAG AA. The light accents are set at the exact lightness where white text on the
+primary button reaches 4.6:1.
+
+**Motion** is used to show change, not to decorate: the calorie ring draws itself
+in while its readout counts up, lists arrive with a 45ms stagger, the nav
+indicator springs between tabs, and modals rise rather than appear. All of it
+switches off under `prefers-reduced-motion`.
+
 ## Two people, two plans
 
 The app ships with two profiles:
@@ -43,8 +71,9 @@ current profile scope. Per-day calories flag anything over 2000.
 **Dish library** — 58 dishes across Indian, Asian, Middle Eastern, Italian,
 Continental, Mexican and salads, each tagged with what it contains (meat / fish /
 egg / dairy) so diet filtering is exact. Every dish has per-serving nutrition, a
-full ingredient list, a step-by-step method and a link out. Add your own with the
-built-in editor; scale any recipe to the batch size you actually want to cook.
+full ingredient list, a step-by-step method, a link to a written recipe **and a
+cooking video**. Add your own with the built-in editor; scale any recipe to the
+batch size you actually want to cook.
 
 **Grocery list** — everything planned for a week and for whoever is in scope,
 rolled up per ingredient, de-duplicated and sorted by supermarket aisle.
@@ -85,8 +114,10 @@ Requires Node 20+.
   chose. Leave the provider on *On-device* and the app never makes a network call.
 - **Nutrition numbers** are reference estimates for planning, not medical or
   dietetic advice. Photo estimates especially are a starting point — adjust them.
-- **Recipe links** point at a search on a well-known recipe site rather than a
-  deep link, so they don't rot; paste your own URL on any dish to replace it.
+- **Recipe and video links** point at a search — on a well-known recipe site, and
+  on YouTube — rather than at one specific page or video ID. A hand-picked video ID
+  goes dead or drifts to unrelated content; a search always resolves and always
+  shows current results. Paste your own URL on any dish to replace either.
 - **Drag-and-drop** on the planner is HTML5 drag, so it's desktop-only. On a phone
   you add and remove meals per day instead.
 
@@ -101,6 +132,8 @@ src/
   lib/grocery.ts        ingredient roll-up, aisle grouping, purchase rounding
   lib/vision.ts         image compression, Anthropic + OpenRouter calls, offline estimator
   lib/nutrition.ts      per-profile macro maths and daily totals
+  lib/theme.ts          theme + accent tokens, persistence, no-flash boot
+  index.css             the design system: type, tokens, both themes, motion
   views/                Today · Planner · Recipes · Grocery · Snap
   components/           UI primitives, rings, profile bits, recipe sheets, settings
 ```

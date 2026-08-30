@@ -3,19 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0d1117" />
+    <meta name="theme-color" content="#faf9f5" />
     <meta
       name="description"
       content="Nourish — a two-week meal planner, calorie tracker, recipe book and grocery list, with photo calorie logging."
     />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600;700&display=swap"
-      rel="stylesheet"
-    />
     <title>Nourish · meal &amp; calorie tracker</title>
+    <script>
+      // Runs before first paint so the page never flashes the wrong theme.
+      (function () {
+        try {
+          var m = localStorage.getItem('nourish.theme') || 'system'
+          var a = localStorage.getItem('nourish.accent') || 'matcha'
+          var dark =
+            m === 'dark' ||
+            (m === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
+          var r = document.documentElement
+          r.dataset.theme = dark ? 'dark' : 'light'
+          r.dataset.accent = a
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', dark ? '#1b1d24' : '#faf9f5')
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

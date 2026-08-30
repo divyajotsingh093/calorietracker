@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { RecipeDetail } from '@/components/RecipeSheet'
 import { RecipeEditor } from '@/components/RecipeEditor'
-import { IconClock, IconLink, IconPlus, IconSearch } from '@/components/icons'
-import { Button, Card, Chip, Empty, Input, Tag, cx } from '@/components/ui'
+import { IconClock, IconLink, IconPlay, IconPlus, IconSearch } from '@/components/icons'
+import { Button, Card, Chip, Empty, Input, Tag, cx, type as t } from '@/components/ui'
 import { SLOTS, SLOT_META } from '@/lib/slots'
 import { suitsDiet } from '@/lib/profiles'
 import { useStore } from '@/lib/store'
@@ -56,10 +56,10 @@ export function Recipes() {
     <div className="animate-rise space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className={t.displayXl}>
             Dish library
           </h1>
-          <p className="mt-0.5 text-[13px] text-white/45">
+          <p className="mt-0.5 text-[0.8125rem] text-muted">
             {shown.length} of {state.recipes.length} dishes ·{' '}
             {state.recipes.filter((r) => suitsDiet(r, 'vegetarian')).length} suit a vegetarian,
             egg-free diet
@@ -75,7 +75,7 @@ export function Recipes() {
           <IconSearch
             width={16}
             height={16}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
           />
           <Input
             value={q}
@@ -114,39 +114,40 @@ export function Recipes() {
       </div>
 
       {shown.length ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {shown.map((r) => (
+        <div className="stagger grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {shown.map((r, i) => (
             <Card
               key={r.id}
-              className="group flex cursor-pointer flex-col p-4 transition hover:bg-white/10"
+              style={{ '--i': Math.min(i, 11) } as React.CSSProperties}
+              className="lift group flex cursor-pointer flex-col p-4"
               onClick={() => setDetail(r)}
             >
               <div className="flex items-start gap-3">
-                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-white/12 to-white/5 text-2xl">
+                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-fill-hover to-fill text-2xl">
                   {r.emoji}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-display font-semibold tracking-tight">{r.name}</h3>
+                  <h3 className={cx(t.displayM, 'truncate')}>{r.name}</h3>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     {r.slots.map((s) => (
                       <span
                         key={s}
                         className={cx(
-                          'rounded-full bg-white/8 px-2 py-0.5 text-[11px] text-white/55',
+                          'rounded-full bg-fill px-2 py-0.5 text-[0.6875rem] text-muted',
                         )}
                       >
                         {SLOT_META[s].emoji} {SLOT_META[s].label}
                       </span>
                     ))}
-                    <span className="rounded-full bg-white/8 px-2 py-0.5 text-[11px] text-white/55">
+                    <span className="rounded-full bg-fill px-2 py-0.5 text-[0.6875rem] text-muted">
                       {r.cuisine}
                     </span>
                     {suitsDiet(r, 'vegetarian') ? (
-                      <span className="rounded-full bg-lime-300/15 px-2 py-0.5 text-[11px] text-lime-200">
+                      <span className="rounded-full bg-accent-wash px-2 py-0.5 text-[11px] text-accent-ink">
                         🌿 veg
                       </span>
                     ) : (
-                      <span className="rounded-full bg-rose-400/12 px-2 py-0.5 text-[11px] text-rose-200/90">
+                      <span className="rounded-full bg-danger-wash px-2 py-0.5 text-[11px] text-danger">
                         {r.contains.includes('meat')
                           ? 'meat'
                           : r.contains.includes('fish')
@@ -155,7 +156,7 @@ export function Recipes() {
                       </span>
                     )}
                     {r.custom && (
-                      <span className="rounded-full bg-white/12 px-2 py-0.5 text-[11px] text-white/70">
+                      <span className="rounded-full bg-fill-hover px-2 py-0.5 text-[11px] text-soft">
                         yours
                       </span>
                     )}
@@ -165,21 +166,21 @@ export function Recipes() {
 
               <div className="mt-4 grid grid-cols-4 gap-1.5 text-center">
                 {[
-                  { v: r.calories, l: 'kcal', c: 'text-lime-200' },
-                  { v: r.protein, l: 'protein', c: 'text-sky-200' },
-                  { v: r.carbs, l: 'carbs', c: 'text-amber-200' },
-                  { v: r.fat, l: 'fat', c: 'text-orange-200' },
+                  { v: r.calories, l: 'kcal', c: 'text-accent-ink' },
+                  { v: r.protein, l: 'protein', c: 'text-protein' },
+                  { v: r.carbs, l: 'carbs', c: 'text-carbs' },
+                  { v: r.fat, l: 'fat', c: 'text-fat' },
                 ].map((m) => (
-                  <div key={m.l} className="rounded-xl bg-white/5 py-1.5">
+                  <div key={m.l} className="rounded-xl bg-fill py-1.5">
                     <div className={cx('font-display text-sm font-bold tabular-nums', m.c)}>
                       {m.v}
                     </div>
-                    <div className="text-[10px] uppercase tracking-wide text-white/35">{m.l}</div>
+                    <div className="text-[10px] uppercase tracking-wide text-faint">{m.l}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-3 flex items-center gap-2 text-[12px] text-white/40">
+              <div className="mt-3 flex items-center gap-2 text-[0.75rem] text-faint">
                 <span className="inline-flex items-center gap-1">
                   <IconClock width={12} height={12} /> {r.minutes} min
                 </span>
@@ -187,9 +188,10 @@ export function Recipes() {
                 <span>{r.ingredients.length} ingredients</span>
                 <span>·</span>
                 <span>serves {r.servings}</span>
-                {r.link && (
-                  <IconLink width={12} height={12} className="ml-auto text-white/30" />
-                )}
+                <span className="ml-auto flex items-center gap-1.5 text-faint">
+                  {r.video && <IconPlay width={13} height={13} />}
+                  {r.link && <IconLink width={12} height={12} />}
+                </span>
               </div>
 
               {r.tags.length > 0 && (

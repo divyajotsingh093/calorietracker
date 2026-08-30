@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { IconCheck, IconCopy, IconPlus, IconPrint, IconTrash } from '@/components/icons'
 import { ScopeSwitcher } from '@/components/ProfileBits'
-import { Button, Card, Chip, Empty, Input, cx } from '@/components/ui'
+import { Button, Card, Chip, Empty, Input, cx, type as t } from '@/components/ui'
 import { rangeLabel } from '@/lib/date'
+import { tintStyle } from '@/lib/slots'
 import {
   AISLE_META,
   amountsLabel,
@@ -60,10 +61,10 @@ export function Grocery() {
     <div className="animate-rise space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className={t.displayXl}>
             Grocery list
           </h1>
-          <p className="mt-0.5 text-[13px] text-white/45">
+          <p className="mt-0.5 text-[0.8125rem] text-muted">
             {scoped.length > 1 ? 'Both plans' : `${scoped[0]?.name}'s plan`} for{' '}
             {rangeLabel(weekDays[0], 7)} · {dishCount} dishes
           </p>
@@ -96,14 +97,14 @@ export function Grocery() {
 
       <Card className="p-4 sm:p-5">
         <div className="mb-2 flex items-baseline justify-between">
-          <span className="font-display text-sm font-semibold uppercase tracking-[0.1em] text-white/60">
+          <span className={cx(t.micro, 'text-faint')}>
             {doneCount} of {totalCount} in the basket
           </span>
-          <span className="text-[13px] tabular-nums text-white/40">{Math.round(pct)}%</span>
+          <span className="text-[13px] tabular-nums text-faint">{Math.round(pct)}%</span>
         </div>
-        <div className="h-2.5 overflow-hidden rounded-full bg-white/8">
+        <div className="h-2.5 overflow-hidden rounded-full bg-fill">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-lime-300 to-emerald-400 transition-[width] duration-500"
+            className="h-full rounded-full bg-gradient-to-r from-accent to-accent-2 transition-[width] duration-500"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -116,15 +117,19 @@ export function Grocery() {
           hint="Add some meals to the planner and the list fills itself in."
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {groups.map(([aisle, items]) => (
-            <Card key={aisle} className={cx('bg-gradient-to-br p-4', AISLE_META[aisle].tint)}>
+        <div className="stagger grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {groups.map(([aisle, items], i) => (
+            <Card
+              key={aisle}
+              className="wash p-4"
+              style={{ ...tintStyle(AISLE_META[aisle].tint), '--i': i } as React.CSSProperties}
+            >
               <div className="mb-3 flex items-center gap-2.5">
                 <span className="text-lg">{AISLE_META[aisle].emoji}</span>
-                <h2 className="font-display text-sm font-semibold uppercase tracking-[0.1em]">
+                <h2 className={cx(t.micro, 'text-faint')}>
                   {aisle}
                 </h2>
-                <span className="ml-auto text-[12px] tabular-nums text-white/40">
+                <span className="ml-auto text-[12px] tabular-nums text-faint">
                   {items.length}
                 </span>
               </div>
@@ -138,15 +143,15 @@ export function Grocery() {
                         onClick={() => toggleChecked(key)}
                         className={cx(
                           'flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition cursor-pointer',
-                          done ? 'bg-white/[0.03] opacity-45' : 'hover:bg-white/8',
+                          done ? 'opacity-45' : 'hover:bg-fill',
                         )}
                       >
                         <span
                           className={cx(
                             'grid size-5 shrink-0 place-items-center rounded-md border transition',
                             done
-                              ? 'border-lime-300 bg-lime-300 text-ink-950'
-                              : 'border-white/25 text-transparent',
+                              ? 'border-accent bg-accent text-on-accent'
+                              : 'border-line-strong text-transparent',
                           )}
                         >
                           <IconCheck width={13} height={13} />
@@ -155,16 +160,16 @@ export function Grocery() {
                           <span
                             className={cx(
                               'block truncate text-sm first-letter:uppercase',
-                              done && 'line-through decoration-white/30',
+                              done && 'line-through decoration-faint',
                             )}
                           >
                             {line.item}
                           </span>
-                          <span className="block truncate text-[11px] text-white/35">
+                          <span className="block truncate text-[0.6875rem] text-faint">
                             for {line.from.join(', ')}
                           </span>
                         </span>
-                        <span className="shrink-0 text-[13px] tabular-nums text-white/60">
+                        <span className="shrink-0 text-[13px] tabular-nums text-muted">
                           {amountsLabel(line.amounts)}
                         </span>
                       </button>
@@ -175,13 +180,13 @@ export function Grocery() {
             </Card>
           ))}
 
-          <Card className="bg-gradient-to-br from-slate-300/15 to-slate-400/5 p-4">
+          <Card className="wash p-4" style={tintStyle('var(--ink-faint)')}>
             <div className="mb-3 flex items-center gap-2.5">
               <span className="text-lg">🧺</span>
-              <h2 className="font-display text-sm font-semibold uppercase tracking-[0.1em]">
+              <h2 className={cx(t.micro, 'text-faint')}>
                 Extras
               </h2>
-              <span className="ml-auto text-[12px] tabular-nums text-white/40">
+              <span className="ml-auto text-[12px] tabular-nums text-faint">
                 {extras.length}
               </span>
             </div>
@@ -195,27 +200,27 @@ export function Grocery() {
                       onClick={() => toggleChecked(key)}
                       className={cx(
                         'flex flex-1 items-center gap-3 rounded-xl px-2.5 py-2 text-left transition cursor-pointer',
-                        done ? 'opacity-45' : 'hover:bg-white/8',
+                        done ? 'opacity-45' : 'hover:bg-fill',
                       )}
                     >
                       <span
                         className={cx(
                           'grid size-5 shrink-0 place-items-center rounded-md border transition',
                           done
-                            ? 'border-lime-300 bg-lime-300 text-ink-950'
-                            : 'border-white/25 text-transparent',
+                            ? 'border-accent bg-accent text-on-accent'
+                            : 'border-line-strong text-transparent',
                         )}
                       >
                         <IconCheck width={13} height={13} />
                       </span>
-                      <span className={cx('text-sm', done && 'line-through decoration-white/30')}>
+                      <span className={cx('text-sm', done && 'line-through decoration-faint')}>
                         {e.text}
                       </span>
                     </button>
                     <button
                       aria-label="Remove"
                       onClick={() => removeExtra(e.id)}
-                      className="grid size-7 shrink-0 place-items-center rounded-lg text-white/25 opacity-0 transition hover:bg-rose-500/15 hover:text-rose-300 group-hover:opacity-100 cursor-pointer"
+                      className="grid size-7 shrink-0 place-items-center rounded-lg text-faint opacity-0 transition hover:bg-danger-wash hover:text-danger group-hover:opacity-100 cursor-pointer"
                     >
                       <IconTrash width={14} height={14} />
                     </button>
@@ -223,7 +228,7 @@ export function Grocery() {
                 )
               })}
               {!extras.length && (
-                <li className="px-2.5 py-2 text-[13px] text-white/35">
+                <li className="px-2.5 py-2 text-[0.8125rem] text-faint">
                   Coffee, washing-up liquid, whatever else.
                 </li>
               )}

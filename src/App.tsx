@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Avatar } from '@/components/ProfileBits'
 import { SettingsSheet } from '@/components/SettingsSheet'
+import { ModeSwitch, ModeToggle } from '@/components/ThemeControls'
 import {
   IconBook,
   IconCalendar,
@@ -8,11 +10,11 @@ import {
   IconFlame,
   IconSettings,
 } from '@/components/icons'
-import { Avatar } from '@/components/ProfileBits'
-import { cx } from '@/components/ui'
+import { cx, type as t } from '@/components/ui'
 import { todayISO } from '@/lib/date'
 import { dayTotals } from '@/lib/nutrition'
 import { StoreProvider, useStore } from '@/lib/store'
+import { useTheme } from '@/lib/useTheme'
 import { Grocery } from '@/views/Grocery'
 import { Planner } from '@/views/Planner'
 import { Recipes } from '@/views/Recipes'
@@ -31,8 +33,10 @@ const TABS: { id: TabId; label: string; icon: typeof IconFlame }[] = [
 
 function Shell() {
   const { state, recipeMap, scoped } = useStore()
+  const theme = useTheme()
   const [tab, setTab] = useState<TabId>('today')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const railRef = useRef<HTMLDivElement>(null)
 
   const todays = scoped.map((profile) => {
     const eaten = dayTotals(todayISO(), profile.id, state.plan, state.photos, recipeMap, 'eaten')
@@ -40,9 +44,7 @@ function Shell() {
       profile,
       eaten: eaten.calories,
       pct:
-        profile.calorieGoal > 0
-          ? Math.min(100, (eaten.calories / profile.calorieGoal) * 100)
-          : 0,
+        profile.calorieGoal > 0 ? Math.min(100, (eaten.calories / profile.calorieGoal) * 100) : 0,
     }
   })
 
@@ -58,74 +60,100 @@ function Shell() {
     return () => document.removeEventListener('keydown', onKey)
   }, [])
 
+  const activeIndex = TABS.findIndex((x) => x.id === tab)
+
   return (
     <div className="min-h-full lg:flex">
       {/* Desktop rail */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-2 border-r border-white/8 p-5 lg:flex print:hidden">
-        <div className="mb-6 flex items-center gap-3 px-2">
-          <span className="grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-lime-300 to-emerald-400 text-xl shadow-[0_12px_30px_-14px_oklch(0.86_0.19_128)]">
+      <aside className="sticky top-0 hidden h-screen w-[17rem] shrink-0 flex-col gap-1 border-r border-line px-4 py-6 lg:flex print:hidden">
+        <div className="mb-7 flex items-center gap-3 px-2">
+          <span
+            className="grid size-11 place-items-center rounded-2xl text-xl shadow-e2"
+            style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}
+          >
             🥗
           </span>
           <div>
-            <div className="font-display text-lg font-bold leading-tight tracking-tight">
+            <div className="font-display text-[1.25rem] font-semibold leading-tight tracking-[-0.02em]">
               Nourish
             </div>
-            <div className="text-[12px] text-white/40">meal &amp; calorie tracker</div>
+            <div className="text-[0.75rem] text-faint">meal &amp; calorie tracker</div>
           </div>
         </div>
 
-        {TABS.map(({ id, label, icon: Icon }, i) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            className={cx(
-              'group flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left text-sm transition cursor-pointer',
-              tab === id
-                ? 'glass-strong font-medium text-white'
-                : 'text-white/50 hover:bg-white/6 hover:text-white',
-            )}
-          >
-            <Icon
-              width={19}
-              height={19}
-              className={cx(tab === id ? 'text-lime-300' : 'text-white/40')}
-            />
-            <span className="flex-1">{label}</span>
-            <kbd className="rounded bg-white/8 px-1.5 py-0.5 text-[10px] text-white/30 opacity-0 transition group-hover:opacity-100">
-              {i + 1}
-            </kbd>
-          </button>
-        ))}
+        <div ref={railRef} className="relative flex flex-col gap-1">
+          <span
+            aria-hidden
+            className="absolute inset-x-0 rounded-2xl bg-accent-wash ring-1 ring-accent-line"
+            style={{
+              height: '2.875rem',
+              top: `calc(${activeIndex} * (2.875rem + 0.25rem))`,
+              transition: 'top 0.38s var(--ease-spring)',
+            }}
+          />
+          {TABS.map(({ id, label, icon: Icon }, i) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              aria-current={tab === id ? 'page' : undefined}
+              className={cx(
+                'group relative z-10 flex h-[2.875rem] cursor-pointer items-center gap-3 rounded-2xl px-3.5 text-left text-[0.875rem] transition-colors duration-200',
+                tab === id ? 'font-semibold text-ink' : 'text-muted hover:text-ink',
+              )}
+            >
+              <Icon
+                width={19}
+                height={19}
+                className={cx(
+                  'transition-transform duration-300',
+                  tab === id ? 'text-accent-ink scale-110' : 'text-faint',
+                )}
+              />
+              <span className="flex-1">{label}</span>
+              <kbd className="rounded-md bg-fill px-1.5 py-0.5 text-[0.625rem] text-faint opacity-0 transition-opacity group-hover:opacity-100">
+                {i + 1}
+              </kbd>
+            </button>
+          ))}
+        </div>
 
         <div className="mt-auto space-y-3">
-          <div className="glass space-y-3 rounded-2xl p-3.5">
-            <span className="block text-[12px] uppercase tracking-[0.08em] text-white/45">
-              Today
-            </span>
+          <div className="space-y-3 rounded-2xl border border-line bg-panel p-3.5 shadow-e1">
+            <span className={cx('block text-faint', t.micro)}>Today</span>
             {todays.map(({ profile, eaten, pct }) => (
               <div key={profile.id}>
                 <div className="mb-1.5 flex items-center gap-2">
                   <Avatar profile={profile} size="sm" />
-                  <span className="flex-1 text-[13px] text-white/70">{profile.name}</span>
-                  <span className="text-[13px] tabular-nums text-white/70">
+                  <span className="flex-1 text-[0.8125rem] text-soft">{profile.name}</span>
+                  <span className="text-[0.8125rem] tabular-nums text-soft">
                     {Math.round(eaten)}
-                    <span className="text-white/30">/{profile.calorieGoal}</span>
+                    <span className="text-faint">/{profile.calorieGoal}</span>
                   </span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-1.5 overflow-hidden rounded-full"
+                  style={{ background: 'var(--ring-track)' }}
+                >
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-lime-300 to-emerald-400 transition-[width] duration-700"
-                    style={{ width: `${pct}%` }}
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${pct}%`,
+                      background: 'linear-gradient(90deg, var(--accent), var(--accent-2))',
+                      transition: 'width 0.9s var(--ease-out)',
+                    }}
                   />
                 </div>
               </div>
             ))}
           </div>
+
+          <ModeSwitch mode={theme.mode} onChange={theme.setMode} />
+
           <button
             onClick={() => setSettingsOpen(true)}
-            className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm text-white/50 transition hover:bg-white/6 hover:text-white cursor-pointer"
+            className="press flex w-full cursor-pointer items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[0.875rem] text-muted hover:bg-fill hover:text-ink"
           >
-            <IconSettings width={19} height={19} className="text-white/40" />
+            <IconSettings width={19} height={19} className="text-faint" />
             Settings
           </button>
         </div>
@@ -133,13 +161,18 @@ function Shell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-white/8 bg-ink-950/70 px-4 py-3 backdrop-blur-xl lg:hidden print:hidden">
-          <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-lime-300 to-emerald-400 text-lg">
+        <header className="veil sticky top-0 z-30 flex items-center gap-3 border-b border-line px-4 py-3 lg:hidden print:hidden">
+          <span
+            className="grid size-9 place-items-center rounded-xl text-lg shadow-e1"
+            style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))' }}
+          >
             🥗
           </span>
           <div className="flex-1">
-            <div className="font-display font-bold leading-tight tracking-tight">Nourish</div>
-            <div className="flex gap-2 text-[11px] tabular-nums text-white/40">
+            <div className="font-display text-[1.0625rem] font-semibold leading-tight tracking-[-0.02em]">
+              Nourish
+            </div>
+            <div className="flex gap-2.5 whitespace-nowrap text-[0.6875rem] tabular-nums text-faint">
               {todays.map(({ profile, eaten }) => (
                 <span key={profile.id}>
                   {profile.emoji} {Math.round(eaten)}/{profile.calorieGoal}
@@ -147,16 +180,20 @@ function Shell() {
               ))}
             </div>
           </div>
+          <ModeToggle mode={theme.mode} onChange={theme.setMode} />
           <button
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
-            className="grid size-9 place-items-center rounded-xl text-white/50 transition hover:bg-white/8 hover:text-white cursor-pointer"
+            className="press grid size-10 cursor-pointer place-items-center rounded-xl text-muted hover:bg-fill hover:text-ink"
           >
             <IconSettings width={19} height={19} />
           </button>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-5 sm:px-6 lg:pb-10 lg:pt-8">
+        <main
+          key={tab}
+          className="animate-rise mx-auto w-full max-w-[86rem] flex-1 px-4 pb-28 pt-5 sm:px-6 lg:pb-12 lg:pt-9"
+        >
           {tab === 'today' && <Today onSnap={() => setTab('snap')} />}
           {tab === 'plan' && <Planner />}
           {tab === 'recipes' && <Recipes />}
@@ -166,21 +203,22 @@ function Shell() {
       </div>
 
       {/* Mobile bottom bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-ink-950/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden print:hidden">
+      <nav className="veil fixed inset-x-0 bottom-0 z-30 border-t border-line pb-[env(safe-area-inset-bottom)] lg:hidden print:hidden">
         <div className="mx-auto flex max-w-lg">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
+              aria-current={tab === id ? 'page' : undefined}
               className={cx(
-                'flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition cursor-pointer',
-                tab === id ? 'text-lime-300' : 'text-white/40',
+                'flex flex-1 cursor-pointer flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium transition-colors duration-200',
+                tab === id ? 'text-accent-ink' : 'text-faint',
               )}
             >
               <span
                 className={cx(
-                  'grid size-9 place-items-center rounded-xl transition',
-                  tab === id && 'bg-lime-300/15',
+                  'grid size-9 place-items-center rounded-xl transition-all duration-300',
+                  tab === id ? 'bg-accent-wash scale-105' : 'scale-100',
                 )}
               >
                 <Icon width={19} height={19} />
@@ -191,7 +229,7 @@ function Shell() {
         </div>
       </nav>
 
-      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} theme={theme} />
     </div>
   )
 }

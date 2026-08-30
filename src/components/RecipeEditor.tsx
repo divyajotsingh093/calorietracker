@@ -43,6 +43,7 @@ const EMPTY: Recipe = {
   steps: [''],
   link: '',
   linkLabel: '',
+  video: '',
   custom: true,
 }
 
@@ -85,6 +86,7 @@ export function RecipeEditor({
       steps: draft.steps.map((s) => s.trim()).filter(Boolean),
       tags: draft.tags.map((t) => t.trim().toLowerCase()).filter(Boolean),
       link: draft.link?.trim() || undefined,
+      video: draft.video?.trim() || undefined,
       linkLabel: draft.link?.trim() ? draft.linkLabel?.trim() || 'Open recipe' : undefined,
     }
     onSave(cleaned)
@@ -101,7 +103,7 @@ export function RecipeEditor({
     >
       <div className="space-y-5">
         {error && (
-          <p className="rounded-2xl border border-rose-400/25 bg-rose-500/10 px-3.5 py-2.5 text-[13px] text-rose-200">
+          <p className="rounded-2xl border border-danger/30 bg-danger-wash px-3.5 py-2.5 text-[13px] text-danger">
             {error}
           </p>
         )}
@@ -115,7 +117,7 @@ export function RecipeEditor({
                   onClick={() => set('emoji', e)}
                   className={cx(
                     'grid aspect-square place-items-center rounded-lg text-lg transition cursor-pointer',
-                    draft.emoji === e ? 'bg-white text-ink-950' : 'hover:bg-white/12',
+                    draft.emoji === e ? 'bg-invert text-on-accent' : 'hover:bg-fill-hover',
                   )}
                 >
                   {e}
@@ -146,7 +148,7 @@ export function RecipeEditor({
                       }
                       className={cx(
                         'rounded-full px-3 py-1.5 text-[13px] transition cursor-pointer',
-                        on ? 'bg-white text-ink-950 font-medium' : 'glass text-white/60',
+                        on ? 'bg-invert text-on-accent font-medium' : 'glass text-muted',
                       )}
                     >
                       {SLOT_META[s].emoji} {SLOT_META[s].label}
@@ -211,7 +213,7 @@ export function RecipeEditor({
                     }
                     className={cx(
                       'rounded-full px-3 py-1.5 text-[13px] transition cursor-pointer',
-                      on ? 'bg-rose-400/20 text-rose-100 font-medium' : 'glass text-white/55',
+                      on ? 'bg-danger-wash text-danger font-medium' : 'glass text-muted',
                     )}
                   >
                     {c.label}
@@ -232,7 +234,7 @@ export function RecipeEditor({
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-white/45">
+            <span className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted">
               Ingredients
             </span>
             <Button
@@ -306,6 +308,14 @@ export function RecipeEditor({
           />
         </Field>
 
+        <Field label="Video link" hint="A cooking video for this dish.">
+          <Input
+            value={draft.video ?? ''}
+            onChange={(e) => set('video', e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=…"
+          />
+        </Field>
+
         <div className="grid gap-3 sm:grid-cols-[1fr_12rem]">
           <Field label="Recipe link">
             <Input
@@ -323,7 +333,7 @@ export function RecipeEditor({
           </Field>
         </div>
 
-        <div className="flex items-center gap-2 border-t border-white/10 pt-4">
+        <div className="flex items-center gap-2 border-t border-line pt-4">
           {initial?.id && onDelete && (
             <Button
               variant="danger"

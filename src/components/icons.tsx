@@ -136,3 +136,34 @@ export const IconPrint = (p: P) => (
     <path d="M7 14h10v7H7z" />
   </svg>
 )
+export const IconSun = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </svg>
+)
+export const IconMoon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" />
+  </svg>
+)
+export const IconMonitor = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="2.5" y="4" width="19" height="13" rx="2.5" />
+    <path d="M8.5 21h7M12 17v4" />
+  </svg>
+)
+export const IconPalette = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 3a9 9 0 1 0 0 18c1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.2-9-7.2Z" />
+    <circle cx="7.5" cy="11.5" r="1" />
+    <circle cx="10.5" cy="7.5" r="1" />
+    <circle cx="15.5" cy="8.5" r="1" />
+  </svg>
+)
+export const IconPlay = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M3.5 7.5a3 3 0 0 1 2.6-3A48 48 0 0 1 12 4c2.3 0 4.4.2 5.9.5a3 3 0 0 1 2.6 3c.2 1.3.3 2.8.3 4.5s-.1 3.2-.3 4.5a3 3 0 0 1-2.6 3c-1.5.3-3.6.5-5.9.5s-4.4-.2-5.9-.5a3 3 0 0 1-2.6-3A28 28 0 0 1 3.2 12c0-1.7.1-3.2.3-4.5Z" />
+    <path d="M10.2 9.4v5.2l4.4-2.6-4.4-2.6Z" />
+  </svg>
+)

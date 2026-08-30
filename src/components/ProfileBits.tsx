@@ -16,10 +16,10 @@ export function Avatar({
     <span
       title={`${profile.name} — ${dietLabel(profile.diet)}`}
       className={cx(
-        'grid shrink-0 place-items-center rounded-full bg-gradient-to-br font-semibold text-ink-950',
+        'grid shrink-0 place-items-center rounded-full bg-gradient-to-br font-semibold text-on-accent',
         profile.accent,
         sizes[size],
-        ring && 'ring-2 ring-ink-950',
+        ring && 'ring-2 ring-panel',
       )}
     >
       {profile.emoji}
@@ -66,8 +66,8 @@ export function ScopeSwitcher({
           className={cx(
             'flex items-center gap-1.5 rounded-full py-1.5 pl-1.5 pr-3 text-[13px] font-medium transition cursor-pointer',
             scope === p.id
-              ? 'bg-white text-ink-950'
-              : 'text-white/55 hover:bg-white/10 hover:text-white',
+              ? 'bg-invert text-on-accent'
+              : 'text-muted hover:bg-fill-hover hover:text-ink',
           )}
         >
           <Avatar profile={p} size="sm" />
@@ -79,8 +79,8 @@ export function ScopeSwitcher({
         className={cx(
           'rounded-full px-3 py-1.5 text-[13px] font-medium transition cursor-pointer',
           scope === 'both'
-            ? 'bg-white text-ink-950'
-            : 'text-white/55 hover:bg-white/10 hover:text-white',
+            ? 'bg-invert text-on-accent'
+            : 'text-muted hover:bg-fill-hover hover:text-ink',
         )}
       >
         Both

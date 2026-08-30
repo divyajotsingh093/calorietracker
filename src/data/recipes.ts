@@ -42,6 +42,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=poha',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Kanda+Poha+indian+recipe',
   },
   {
     id: 'r-besan-chilla',
@@ -74,6 +75,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=besan+chilla',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Besan+Chilla+indian+recipe',
   },
   {
     id: 'r-idli-sambar',
@@ -108,6 +110,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=idli+sambar',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Idli+with+Sambar+indian+recipe',
   },
   {
     id: 'r-rajma-chawal',
@@ -141,6 +144,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=rajma',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Rajma+Chawal+indian+recipe',
   },
   {
     id: 'r-palak-paneer',
@@ -175,6 +179,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=palak+paneer',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Palak+Paneer+indian+recipe',
   },
   {
     id: 'r-chana-masala',
@@ -208,6 +213,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=chana+masala',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Chana+Masala+indian+recipe',
   },
   {
     id: 'r-dal-tadka',
@@ -241,6 +247,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=dal+tadka',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Dal+Tadka+%26+Jeera+Rice+indian+recipe',
   },
   {
     id: 'r-veg-biryani',
@@ -275,6 +282,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=veg+biryani',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Vegetable+Biryani+indian+recipe',
   },
   {
     id: 'r-paneer-tikka',
@@ -309,6 +317,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=paneer+tikka+masala',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Paneer+Tikka+Masala+indian+recipe',
   },
   {
     id: 'r-aloo-gobi',
@@ -342,6 +351,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=aloo+gobi',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Aloo+Gobi+with+Roti+indian+recipe',
   },
   {
     id: 'r-chicken-tikka-masala',
@@ -376,6 +386,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=chicken%20tikka%20masala',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Chicken+Tikka+Masala+indian+recipe',
   },
   {
     id: 'r-chicken-biryani',
@@ -410,6 +421,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=chicken%20biryani',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Chicken+Biryani+indian+recipe',
   },
   {
     id: 'r-goan-fish-curry',
@@ -443,6 +455,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=goan%20fish%20curry',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Goan+Fish+Curry+indian+recipe',
   },
 
   // ══════════════════════════════ ASIAN ══════════════════════════════
@@ -479,6 +492,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=pad+thai',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Tofu+Pad+Thai+recipe',
   },
   {
     id: 'r-tofu-bibimbap',
@@ -512,6 +526,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=bibimbap',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Tofu+Bibimbap+recipe',
   },
   {
     id: 'r-veg-fried-rice',
@@ -545,6 +560,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=fried+rice',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Ginger+Veg+Fried+Rice+recipe',
   },
   {
     id: 'r-miso-ramen-veg',
@@ -578,6 +594,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=miso+ramen',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Miso+Vegetable+Ramen+recipe',
   },
   {
     id: 'r-thai-green-curry-veg',
@@ -612,6 +629,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=thai%20green%20curry',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Thai+Green+Curry+with+Tofu+recipe',
   },
   {
     id: 'r-thai-green-curry',
@@ -646,6 +664,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=thai%20green%20curry',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Thai+Green+Chicken+Curry+recipe',
   },
   {
     id: 'r-beef-stirfry',
@@ -680,6 +699,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=beef+stir+fry',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Ginger+Beef+Stir-Fry+recipe',
   },
   {
     id: 'r-teriyaki-salmon-donburi',
@@ -713,6 +733,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=teriyaki+salmon',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Teriyaki+Salmon+Donburi+recipe',
   },
   {
     id: 'r-tuna-poke',
@@ -746,6 +767,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=poke+bowl',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Tuna+Poke+Bowl+recipe',
   },
   {
     id: 'r-sundubu',
@@ -780,6 +802,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=sundubu+jjigae',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Silken+Tofu+Stew+recipe',
   },
 
   // ═══════════════════════════ MIDDLE EASTERN ═══════════════════════════
@@ -816,6 +839,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=falafel',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Falafel+%26+Tahini+Bowl+middle+eastern+recipe',
   },
   {
     id: 'r-mujadara',
@@ -849,6 +873,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=mujadara',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Mujadara+middle+eastern+recipe',
   },
   {
     id: 'r-fattoush-halloumi',
@@ -883,6 +908,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=fattoush',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Fattoush+with+Halloumi+middle+eastern+recipe',
   },
   {
     id: 'r-stuffed-peppers',
@@ -916,6 +942,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=stuffed%20peppers',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Bulgur+Stuffed+Peppers+middle+eastern+recipe',
   },
   {
     id: 'r-shakshuka',
@@ -950,6 +977,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=shakshuka',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=One-Pan+Shakshuka+middle+eastern+recipe',
   },
   {
     id: 'r-chicken-shawarma',
@@ -984,6 +1012,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=chicken+shawarma',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Chicken+Shawarma+Bowl+middle+eastern+recipe',
   },
 
   // ══════════════════════════════ ITALIAN ══════════════════════════════
@@ -1019,6 +1048,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=pasta+alla+norma',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Pasta+alla+Norma+italian+recipe',
   },
   {
     id: 'r-pesto-gnocchi',
@@ -1052,6 +1082,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=pesto%20gnocchi',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Pesto+Gnocchi+with+Greens+italian+recipe',
   },
   {
     id: 'r-minestrone',
@@ -1085,6 +1116,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=minestrone',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Minestrone+italian+recipe',
   },
   {
     id: 'r-caprese-panini',
@@ -1116,6 +1148,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.allrecipes.com/search?q=caprese+panini',
     linkLabel: 'Allrecipes',
+    video: 'https://www.youtube.com/results?search_query=Caprese+Panini+italian+recipe',
   },
   {
     id: 'r-mushroom-risotto',
@@ -1150,6 +1183,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=mushroom+risotto',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Wild+Mushroom+Risotto+italian+recipe',
   },
   {
     id: 'r-turkey-meatballs',
@@ -1184,6 +1218,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=turkey+meatballs',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Turkey+Meatballs+%26+Spaghetti+italian+recipe',
   },
   {
     id: 'r-tuna-puttanesca',
@@ -1217,6 +1252,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=puttanesca',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Tuna+Puttanesca+italian+recipe',
   },
 
   // ═══════════════════════════ CONTINENTAL ═══════════════════════════
@@ -1250,6 +1286,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=overnight%20oats',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Berry+Overnight+Oats+recipe',
   },
   {
     id: 'r-smoothie-bowl',
@@ -1280,6 +1317,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://minimalistbaker.com/?s=smoothie+bowl',
     linkLabel: 'Minimalist Baker',
+    video: 'https://www.youtube.com/results?search_query=Green+Smoothie+Bowl+recipe',
   },
   {
     id: 'r-yoghurt-parfait',
@@ -1307,6 +1345,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.allrecipes.com/search?q=yogurt+parfait',
     linkLabel: 'Allrecipes',
+    video: 'https://www.youtube.com/results?search_query=Yoghurt+%26+Granola+Parfait+recipe',
   },
   {
     id: 'r-pb-banana-toast',
@@ -1336,6 +1375,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=peanut%20butter%20toast',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Peanut+Butter+Banana+Toast+recipe',
   },
   {
     id: 'r-avocado-toast',
@@ -1366,6 +1406,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=avocado%20toast',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Smashed+Avocado+%26+Egg+Toast+recipe',
   },
   {
     id: 'r-veggie-scramble',
@@ -1397,6 +1438,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=scrambled+eggs',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Feta+%26+Spinach+Scramble+recipe',
   },
   {
     id: 'r-halloumi-traybake',
@@ -1430,6 +1472,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=halloumi%20traybake',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Halloumi+%26+Veg+Traybake+recipe',
   },
   {
     id: 'r-salmon-traybake',
@@ -1462,6 +1505,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=salmon%20traybake',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Honey+Garlic+Salmon+Traybake+recipe',
   },
   {
     id: 'r-roast-chicken',
@@ -1494,6 +1538,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=roast%20chicken',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Lemon+Herb+Roast+Chicken+recipe',
   },
   {
     id: 'r-chicken-burrito-bowl',
@@ -1527,6 +1572,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.allrecipes.com/search?q=burrito+bowl',
     linkLabel: 'Allrecipes',
+    video: 'https://www.youtube.com/results?search_query=Chicken+Burrito+Bowl+mexican+recipe',
   },
   {
     id: 'r-sweet-potato-tacos',
@@ -1560,6 +1606,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://cookieandkate.com/?s=sweet+potato+tacos',
     linkLabel: 'Cookie and Kate',
+    video: 'https://www.youtube.com/results?search_query=Sweet+Potato+%26+Black+Bean+Tacos+mexican+recipe',
   },
   {
     id: 'r-fish-tacos',
@@ -1592,6 +1639,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.seriouseats.com/search?q=fish+tacos',
     linkLabel: 'Serious Eats',
+    video: 'https://www.youtube.com/results?search_query=Baja+Fish+Tacos+mexican+recipe',
   },
 
   // ═══════════════════════════════ SALADS ═══════════════════════════════
@@ -1627,6 +1675,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://cookieandkate.com/?s=quinoa+salad',
     linkLabel: 'Cookie and Kate',
+    video: 'https://www.youtube.com/results?search_query=Mediterranean+Quinoa+Salad+recipe',
   },
   {
     id: 'r-chickpea-halloumi-salad',
@@ -1660,6 +1709,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=halloumi%20salad',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Roast+Chickpea+%26+Halloumi+Salad+recipe',
   },
   {
     id: 'r-sesame-slaw',
@@ -1693,6 +1743,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://cookieandkate.com/?s=sesame+slaw',
     linkLabel: 'Cookie and Kate',
+    video: 'https://www.youtube.com/results?search_query=Sesame+Edamame+Slaw+recipe',
   },
   {
     id: 'r-greek-salad',
@@ -1726,6 +1777,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=greek%20salad',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Greek+Salad+with+Butter+Beans+recipe',
   },
   {
     id: 'r-lentil-soup',
@@ -1759,6 +1811,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.bbcgoodfood.com/search?q=red%20lentil%20soup',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Smoky+Red+Lentil+Soup+middle+eastern+recipe',
   },
 
   // ═══════════════════════════════ SNACKS ═══════════════════════════════
@@ -1790,6 +1843,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://cookieandkate.com/?s=hummus',
     linkLabel: 'Cookie and Kate',
+    video: 'https://www.youtube.com/results?search_query=Hummus+%26+Crudit%C3%A9+Plate+middle+eastern+recipe',
   },
   {
     id: 'r-energy-balls',
@@ -1820,6 +1874,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://minimalistbaker.com/?s=energy+balls',
     linkLabel: 'Minimalist Baker',
+    video: 'https://www.youtube.com/results?search_query=Cocoa+Date+Energy+Balls+recipe',
   },
   {
     id: 'r-masala-makhana',
@@ -1849,6 +1904,7 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=makhana',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Masala+Roasted+Makhana+indian+recipe',
   },
   {
     id: 'r-fruit-nuts',
@@ -1872,6 +1928,7 @@ export const SEED_RECIPES: Recipe[] = [
     steps: ['Slice the apples, dust with cinnamon, and eat with a handful of almonds.'],
     link: 'https://www.bbcgoodfood.com/search?q=healthy%20snacks',
     linkLabel: 'BBC Good Food',
+    video: 'https://www.youtube.com/results?search_query=Apple+%26+Almond+Plate+recipe',
   },
   {
     id: 'r-dhokla',
@@ -1904,5 +1961,6 @@ export const SEED_RECIPES: Recipe[] = [
     ],
     link: 'https://www.vegrecipesofindia.com/?s=dhokla',
     linkLabel: 'Veg Recipes of India',
+    video: 'https://www.youtube.com/results?search_query=Steamed+Dhokla+indian+recipe',
   },
 ]

@@ -11,15 +11,19 @@ export const AISLE_ORDER: Aisle[] = [
   'Other',
 ]
 
+/**
+ * Aisle hues are stated as raw oklch so they read the same in both themes;
+ * they only ever appear as a ~14% wash over the panel colour.
+ */
 export const AISLE_META: Record<Aisle, { emoji: string; tint: string }> = {
-  Produce: { emoji: '🥬', tint: 'from-lime-400/25 to-emerald-400/10' },
-  'Meat & Seafood': { emoji: '🥩', tint: 'from-rose-400/25 to-orange-400/10' },
-  'Dairy & Eggs': { emoji: '🥛', tint: 'from-sky-300/25 to-indigo-400/10' },
-  Bakery: { emoji: '🍞', tint: 'from-amber-300/25 to-yellow-400/10' },
-  Pantry: { emoji: '🥫', tint: 'from-orange-300/25 to-amber-400/10' },
-  Frozen: { emoji: '🧊', tint: 'from-cyan-300/25 to-blue-400/10' },
-  Spices: { emoji: '🌶️', tint: 'from-fuchsia-400/25 to-rose-400/10' },
-  Other: { emoji: '🧺', tint: 'from-slate-300/25 to-slate-400/10' },
+  Produce: { emoji: '🥬', tint: 'oklch(0.72 0.17 145)' },
+  'Meat & Seafood': { emoji: '🥩', tint: 'oklch(0.68 0.18 20)' },
+  'Dairy & Eggs': { emoji: '🥛', tint: 'oklch(0.72 0.13 240)' },
+  Bakery: { emoji: '🍞', tint: 'oklch(0.78 0.14 78)' },
+  Pantry: { emoji: '🥫', tint: 'oklch(0.72 0.16 52)' },
+  Frozen: { emoji: '🧊', tint: 'oklch(0.75 0.12 210)' },
+  Spices: { emoji: '🌶️', tint: 'oklch(0.68 0.18 330)' },
+  Other: { emoji: '🧺', tint: 'oklch(0.66 0.03 268)' },
 }
 
 export interface GroceryLine {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Avatar } from '@/components/ProfileBits'
-import { IconClock, IconLink, IconPlus, IconSearch } from '@/components/icons'
-import { Button, Chip, Empty, Input, Modal, Tag, cx } from '@/components/ui'
+import { IconClock, IconLink, IconPlay, IconPlus, IconSearch } from '@/components/icons'
+import { Button, Chip, Empty, Input, Modal, Tag, cx, type as t } from '@/components/ui'
 import { SLOTS, SLOT_META } from '@/lib/slots'
 import { AISLE_META, fmtQty } from '@/lib/grocery'
 import { suitsDiet } from '@/lib/profiles'
@@ -30,9 +30,9 @@ export function RecipeCardMini({
   return (
     <button
       onClick={onClick}
-      className="glass group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/12 cursor-pointer"
+      className="glass group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-fill-hover cursor-pointer"
     >
-      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/8 text-xl">
+      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-fill text-xl">
         {recipe.emoji}
       </span>
       <span className="min-w-0 flex-1">
@@ -41,14 +41,14 @@ export function RecipeCardMini({
           {blockedFor.map((p) => (
             <span
               key={p.id}
-              className="shrink-0 rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] text-rose-200"
+              className="shrink-0 rounded-full bg-danger-wash px-2 py-0.5 text-[10px] text-danger"
             >
               not for {p.name}
             </span>
           ))}
         </span>
-        <span className="mt-0.5 flex items-center gap-2 text-[12px] text-white/45">
-          <span className="tabular-nums text-lime-200/80">{recipe.calories} kcal</span>
+        <span className="mt-0.5 flex items-center gap-2 text-[0.75rem] text-muted">
+          <span className="tabular-nums text-accent-ink">{recipe.calories} kcal</span>
           <span>·</span>
           <span className="inline-flex items-center gap-1">
             <IconClock width={12} height={12} />
@@ -63,7 +63,7 @@ export function RecipeCardMini({
       <IconPlus
         width={18}
         height={18}
-        className="shrink-0 text-white/25 transition group-hover:text-lime-300"
+        className="shrink-0 text-faint transition group-hover:text-accent-ink"
       />
     </button>
   )
@@ -147,8 +147,8 @@ export function RecipePicker({
     >
       <div className="space-y-3">
         {targets.length > 1 && (
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/5 px-3 py-2.5">
-            <span className="text-[12px] uppercase tracking-[0.08em] text-white/45">For</span>
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-fill px-3 py-2.5">
+            <span className="text-[12px] uppercase tracking-[0.08em] text-muted">For</span>
             {targets.map((p) => {
               const on = chosen.includes(p.id)
               return (
@@ -161,7 +161,7 @@ export function RecipePicker({
                   }
                   className={cx(
                     'flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[13px] transition cursor-pointer',
-                    on ? 'bg-white text-ink-950 font-medium' : 'bg-white/8 text-white/50',
+                    on ? 'bg-invert text-on-accent font-medium' : 'bg-fill text-muted',
                   )}
                 >
                   <Avatar profile={p} size="sm" />
@@ -176,7 +176,7 @@ export function RecipePicker({
           <IconSearch
             width={16}
             height={16}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-faint"
           />
           <Input
             autoFocus
@@ -232,7 +232,7 @@ export function RecipePicker({
         {hiddenCount > 0 && (
           <button
             onClick={() => setShowAll(true)}
-            className="w-full rounded-2xl border border-dashed border-white/12 px-3 py-2.5 text-[13px] text-white/45 transition hover:border-white/25 hover:text-white cursor-pointer"
+            className="w-full rounded-2xl border border-dashed border-line px-3 py-2.5 text-[0.8125rem] text-muted transition hover:border-line-strong hover:text-ink cursor-pointer"
           >
             {hiddenCount} more dishes don&apos;t suit{' '}
             {forProfiles
@@ -244,7 +244,7 @@ export function RecipePicker({
         {showAll && (
           <button
             onClick={() => setShowAll(false)}
-            className="w-full rounded-2xl px-3 py-2 text-[13px] text-white/40 transition hover:text-white cursor-pointer"
+            className="w-full rounded-2xl px-3 py-2 text-[0.8125rem] text-faint transition hover:text-ink cursor-pointer"
           >
             Hide dishes that don&apos;t suit the diet
           </button>
@@ -297,17 +297,17 @@ export function RecipeDetail({
       <div className="space-y-6">
         <div className="grid grid-cols-4 gap-2">
           {[
-            { k: 'Calories', v: `${Math.round(recipe.calories)}`, u: 'kcal', c: 'text-lime-200' },
-            { k: 'Protein', v: `${recipe.protein}`, u: 'g', c: 'text-sky-200' },
-            { k: 'Carbs', v: `${recipe.carbs}`, u: 'g', c: 'text-amber-200' },
-            { k: 'Fat', v: `${recipe.fat}`, u: 'g', c: 'text-orange-200' },
+            { k: 'Calories', v: `${Math.round(recipe.calories)}`, u: 'kcal', c: 'text-accent-ink' },
+            { k: 'Protein', v: `${recipe.protein}`, u: 'g', c: 'text-protein' },
+            { k: 'Carbs', v: `${recipe.carbs}`, u: 'g', c: 'text-carbs' },
+            { k: 'Fat', v: `${recipe.fat}`, u: 'g', c: 'text-fat' },
           ].map((m) => (
             <div key={m.k} className="glass rounded-2xl px-3 py-3 text-center">
               <div className={cx('font-display text-xl font-bold tabular-nums', m.c)}>
                 {m.v}
-                <span className="text-[11px] font-normal text-white/40">{m.u}</span>
+                <span className="text-[11px] font-normal text-faint">{m.u}</span>
               </div>
-              <div className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-white/40">
+              <div className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-faint">
                 {m.k}
               </div>
             </div>
@@ -315,19 +315,19 @@ export function RecipeDetail({
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          <Tag className="bg-white/12 text-white/75">{recipe.cuisine}</Tag>
+          <Tag className="bg-fill-hover text-soft">{recipe.cuisine}</Tag>
           {recipe.slots.map((s) => (
-            <Tag key={s} className="bg-white/12 text-white/75">
+            <Tag key={s} className="bg-fill-hover text-soft">
               {SLOT_META[s].emoji} {SLOT_META[s].label}
             </Tag>
           ))}
           {recipe.contains.length === 0 ? (
-            <Tag className="bg-lime-300/15 text-lime-200">vegetarian · egg-free</Tag>
+            <Tag className="bg-accent-wash text-accent-ink">vegetarian · egg-free</Tag>
           ) : (
             recipe.contains
               .filter((c) => c !== 'dairy')
               .map((c) => (
-                <Tag key={c} className="bg-rose-400/15 text-rose-200">
+                <Tag key={c} className="bg-danger-wash text-danger">
                   contains {c}
                 </Tag>
               ))
@@ -339,21 +339,21 @@ export function RecipeDetail({
 
         <div>
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h3 className="font-display text-sm font-semibold uppercase tracking-[0.1em] text-white/70">
+            <h3 className={cx(t.micro, 'text-faint')}>
               Ingredients
             </h3>
-            <div className="flex items-center gap-2 text-[13px] text-white/50">
+            <div className="flex items-center gap-2 text-[0.8125rem] text-muted">
               <span>Scale to</span>
               <div className="glass flex items-center gap-1 rounded-full px-1 py-0.5">
                 <button
-                  className="size-6 rounded-full text-white/70 transition hover:bg-white/15 cursor-pointer"
+                  className="size-6 rounded-full text-soft transition hover:bg-fill-strong cursor-pointer"
                   onClick={() => setPortions((p) => Math.max(1, p - 1))}
                 >
                   –
                 </button>
-                <span className="w-6 text-center tabular-nums text-white">{portions}</span>
+                <span className="w-6 text-center tabular-nums text-ink">{portions}</span>
                 <button
-                  className="size-6 rounded-full text-white/70 transition hover:bg-white/15 cursor-pointer"
+                  className="size-6 rounded-full text-soft transition hover:bg-fill-strong cursor-pointer"
                   onClick={() => setPortions((p) => Math.min(20, p + 1))}
                 >
                   +
@@ -366,11 +366,11 @@ export function RecipeDetail({
             {recipe.ingredients.map((ing) => (
               <li
                 key={ing.item + ing.unit}
-                className="flex items-center gap-2.5 rounded-xl bg-white/5 px-3 py-2 text-sm"
+                className="flex items-center gap-2.5 rounded-xl bg-fill px-3 py-2 text-sm"
               >
                 <span className="text-sm">{AISLE_META[ing.aisle].emoji}</span>
-                <span className="flex-1 text-white/85">{ing.item}</span>
-                <span className="tabular-nums text-white/50">
+                <span className="flex-1 text-ink">{ing.item}</span>
+                <span className="tabular-nums text-muted">
                   {fmtQty(ing.qty * factor)} {ing.unit}
                 </span>
               </li>
@@ -379,13 +379,13 @@ export function RecipeDetail({
         </div>
 
         <div>
-          <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.1em] text-white/70">
+          <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-[0.1em] text-soft">
             Method
           </h3>
           <ol className="space-y-2.5">
             {recipe.steps.map((step, i) => (
-              <li key={i} className="flex gap-3 text-sm leading-relaxed text-white/80">
-                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-lime-300/15 text-[12px] font-semibold text-lime-200">
+              <li key={i} className="flex gap-3 text-sm leading-relaxed text-soft">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-wash text-[12px] font-semibold text-accent-ink">
                   {i + 1}
                 </span>
                 <span>{step}</span>
@@ -394,7 +394,15 @@ export function RecipeDetail({
           </ol>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+        <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
+          {recipe.video && (
+            <a href={recipe.video} target="_blank" rel="noreferrer noopener" className="inline-flex">
+              <Button variant="primary" size="sm">
+                <IconPlay width={15} height={15} />
+                Watch how it&apos;s made
+              </Button>
+            </a>
+          )}
           {recipe.link && (
             <a href={recipe.link} target="_blank" rel="noreferrer noopener" className="inline-flex">
               <Button variant="soft" size="sm">

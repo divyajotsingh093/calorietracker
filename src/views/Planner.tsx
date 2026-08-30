@@ -10,7 +10,7 @@ import {
   IconRepeat,
   IconTrash,
 } from '@/components/icons'
-import { Button, Card, cx } from '@/components/ui'
+import { Button, Card, cx, type as t } from '@/components/ui'
 import {
   addDays,
   currentMondayISO,
@@ -146,7 +146,7 @@ export function Planner() {
       }}
       onClick={() => setDetail(group.recipe)}
       className={cx(
-        'group relative rounded-xl border border-white/10 bg-white/[0.07] transition hover:border-white/20 hover:bg-white/12',
+        'group relative rounded-xl border border-line bg-panel-2 transition hover:border-line-strong hover:bg-fill-hover',
         compact
           ? 'cursor-grab px-2 py-1.5 active:cursor-grabbing'
           : 'cursor-pointer py-2.5 pl-3 pr-12',
@@ -160,7 +160,7 @@ export function Planner() {
         <span
           title={group.recipe.name}
           className={cx(
-            'flex-1 font-medium leading-tight text-white/85',
+            'flex-1 font-medium leading-tight text-ink',
             compact ? 'line-clamp-2 text-[12px]' : 'text-sm',
           )}
         >
@@ -169,14 +169,14 @@ export function Planner() {
         {multi && <AvatarStack profiles={group.profiles} />}
       </div>
       <div className="mt-1 flex items-center gap-2">
-        <span className="text-[11px] tabular-nums text-lime-200/70">
+        <span className="text-[11px] tabular-nums text-accent-ink">
           {Math.round(group.kcal)} kcal
         </span>
         {!compact && (
-          <span className="text-[11px] text-white/35">{group.recipe.cuisine}</span>
+          <span className="text-[0.6875rem] text-faint">{group.recipe.cuisine}</span>
         )}
         {multi && group.profiles.length === 1 && (
-          <span className="text-[10px] text-white/40">{group.profiles[0].name} only</span>
+          <span className="text-[10px] text-faint">{group.profiles[0].name} only</span>
         )}
       </div>
       <button
@@ -186,7 +186,7 @@ export function Planner() {
           group.entries.forEach((x) => removePlanEntry(x.id))
         }}
         className={cx(
-          'absolute grid place-items-center rounded-full bg-ink-800 text-white/50 shadow transition hover:bg-rose-500/80 hover:text-white cursor-pointer',
+          'absolute grid place-items-center rounded-full bg-panel-3 text-muted shadow transition hover:bg-danger hover:text-ink cursor-pointer',
           compact
             ? '-right-1 -top-1 size-5 opacity-0 group-hover:opacity-100'
             : 'right-1.5 top-1.5 size-7',
@@ -221,12 +221,15 @@ export function Planner() {
         }}
         className={cx(
           'rounded-xl p-1 transition',
-          over === cellKey && 'bg-lime-300/15 ring-1 ring-lime-300/40',
+          over === cellKey && 'bg-accent-wash ring-1 ring-accent-line',
         )}
       >
         <div className="mb-1 flex items-center gap-1.5 px-1">
-          <i className={cx('size-1.5 rounded-full', SLOT_META[slot].dot)} />
-          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/30">
+          <i
+            className="size-1.5 rounded-full"
+            style={{ background: SLOT_META[slot].tint }}
+          />
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-faint">
             {SLOT_META[slot].label}
           </span>
         </div>
@@ -238,7 +241,7 @@ export function Planner() {
             onClick={() => setTarget({ date, slot })}
             aria-label={`Add ${SLOT_META[slot].label} on ${longDate(date)}`}
             className={cx(
-              'flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-white/12 text-white/25 transition hover:border-lime-300/40 hover:text-lime-300 cursor-pointer',
+              'flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-line text-faint transition hover:border-accent-line hover:text-accent-ink cursor-pointer',
               compact ? 'py-1.5' : 'py-2.5',
             )}
           >
@@ -259,7 +262,7 @@ export function Planner() {
           <div
             className={cx(
               'text-[11px] font-semibold uppercase tracking-[0.1em]',
-              isNow ? 'text-lime-300' : 'text-white/40',
+              isNow ? 'text-accent-ink' : 'text-faint',
             )}
           >
             {dayName(date)}
@@ -272,16 +275,16 @@ export function Planner() {
           onClick={() => setDayMenu(dayMenu === date ? null : date)}
           title={multi ? 'Average per person · day actions' : 'Day actions'}
           className={cx(
-            'rounded-lg px-1.5 py-0.5 text-[11px] tabular-nums transition hover:bg-white/10 hover:text-white cursor-pointer',
-            over2000 ? 'text-orange-300' : 'text-white/45',
+            'rounded-lg px-1.5 py-0.5 text-[11px] tabular-nums transition hover:bg-fill-hover hover:text-ink cursor-pointer',
+            over2000 ? 'text-warn' : 'text-muted',
           )}
         >
           {Math.round(totals.kcal)}
         </button>
         {dayMenu === date && (
-          <div className="glass-strong absolute right-0 top-8 z-20 w-48 animate-pop rounded-2xl bg-ink-900/97 p-1.5 text-[13px]">
+          <div className="glass-strong absolute right-0 top-8 z-20 w-48 animate-pop rounded-2xl bg-raised p-1.5 text-[13px]">
             <button
-              className="w-full rounded-xl px-3 py-2.5 text-left transition hover:bg-white/12 cursor-pointer"
+              className="w-full rounded-xl px-3 py-2.5 text-left transition hover:bg-fill-hover cursor-pointer"
               onClick={() => {
                 copyDay(date, addDays(date, 7))
                 setDayMenu(null)
@@ -290,7 +293,7 @@ export function Planner() {
               Copy to next week
             </button>
             <button
-              className="w-full rounded-xl px-3 py-2.5 text-left transition hover:bg-white/12 cursor-pointer"
+              className="w-full rounded-xl px-3 py-2.5 text-left transition hover:bg-fill-hover cursor-pointer"
               onClick={() => {
                 copyDay(date, addDays(date, 1))
                 setDayMenu(null)
@@ -299,7 +302,7 @@ export function Planner() {
               Copy to tomorrow
             </button>
             <button
-              className="w-full rounded-xl px-3 py-2.5 text-left text-rose-200 transition hover:bg-rose-500/15 cursor-pointer"
+              className="w-full rounded-xl px-3 py-2.5 text-left text-danger transition hover:bg-danger-wash cursor-pointer"
               onClick={() => {
                 clearDay(date)
                 setDayMenu(null)
@@ -317,15 +320,15 @@ export function Planner() {
     <div className="animate-rise space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className={t.displayXl}>
             Two-week plan
           </h1>
-          <p className="mt-0.5 text-[13px] text-white/45">
+          <p className="mt-0.5 text-[0.8125rem] text-muted">
             {rangeLabel(state.anchor, 14)}
             <span className="hidden sm:inline">
               {' '}
               · drag a meal to move it, hold{' '}
-              <kbd className="rounded bg-white/10 px-1 py-0.5 text-[11px]">Alt</kbd> while dragging
+              <kbd className="rounded bg-fill-hover px-1 py-0.5 text-[11px]">Alt</kbd> while dragging
               to copy
             </span>
           </p>
@@ -336,20 +339,20 @@ export function Planner() {
             <button
               aria-label="Previous fortnight"
               onClick={() => setAnchor(addDays(state.anchor, -14))}
-              className="grid size-9 place-items-center rounded-full text-white/60 transition hover:bg-white/12 hover:text-white cursor-pointer"
+              className="grid size-9 place-items-center rounded-full text-muted transition hover:bg-fill-hover hover:text-ink cursor-pointer"
             >
               <IconChevronLeft width={18} height={18} />
             </button>
             <button
               onClick={() => setAnchor(currentMondayISO())}
-              className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-white/70 transition hover:bg-white/12 cursor-pointer"
+              className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-soft transition hover:bg-fill-hover cursor-pointer"
             >
               This fortnight
             </button>
             <button
               aria-label="Next fortnight"
               onClick={() => setAnchor(addDays(state.anchor, 14))}
-              className="grid size-9 place-items-center rounded-full text-white/60 transition hover:bg-white/12 hover:text-white cursor-pointer"
+              className="grid size-9 place-items-center rounded-full text-muted transition hover:bg-fill-hover hover:text-ink cursor-pointer"
             >
               <IconChevronRight width={18} height={18} />
             </button>
@@ -363,14 +366,14 @@ export function Planner() {
 
         return (
           <Card key={week} className="overflow-hidden">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/10 px-4 py-3.5 sm:px-5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3.5 sm:px-5">
               <div className="flex items-baseline gap-3">
-                <h2 className="font-display text-lg font-semibold tracking-tight">
+                <h2 className={t.displayM}>
                   Week {week + 1}
                 </h2>
-                <span className="text-[13px] text-white/40">{rangeLabel(weekDays[0], 7)}</span>
+                <span className="text-[0.8125rem] text-faint">{rangeLabel(weekDays[0], 7)}</span>
               </div>
-              <div className="flex items-center gap-4 text-[13px] text-white/50">
+              <div className="flex items-center gap-4 text-[0.8125rem] text-muted">
                 <span className="tabular-nums">{stats.meals} meals</span>
                 <span className="tabular-nums">
                   ⌀ {Math.round(stats.avg)} kcal/day
@@ -378,10 +381,10 @@ export function Planner() {
                     className={cx(
                       'ml-1.5',
                       stats.avg > 2000
-                        ? 'text-orange-300'
+                        ? 'text-warn'
                         : stats.avg > goal
-                          ? 'text-amber-200'
-                          : 'text-lime-300',
+                          ? 'text-carbs'
+                          : 'text-accent-ink',
                     )}
                   >
                     {stats.avg > 2000 ? 'over 2000' : 'under 2000'}
@@ -417,9 +420,9 @@ export function Planner() {
                     className={cx(
                       'flex flex-col gap-2 rounded-2xl p-2 transition',
                       date === today
-                        ? 'bg-lime-300/10 ring-1 ring-lime-300/30'
+                        ? 'bg-accent-wash ring-1 ring-accent-line'
                         : isWeekend(date)
-                          ? 'bg-white/[0.03]'
+                          ? 'bg-fill'
                           : '',
                     )}
                   >
@@ -445,8 +448,8 @@ export function Planner() {
                   className={cx(
                     'rounded-2xl p-3',
                     date === today
-                      ? 'bg-lime-300/10 ring-1 ring-lime-300/30'
-                      : 'bg-white/[0.04]',
+                      ? 'bg-accent-wash ring-1 ring-accent-line'
+                      : 'bg-fill',
                   )}
                 >
                   <DayHeader date={date} compact={false} />

@@ -12,10 +12,10 @@ import {
   IconPlus,
   IconTrash,
 } from '@/components/icons'
-import { Button, Card, Tag, cx } from '@/components/ui'
+import { Button, Card, Tag, cx, type as t } from '@/components/ui'
 import { addDays, longDate, todayISO } from '@/lib/date'
 import { dayTotals, entryMacros } from '@/lib/nutrition'
-import { SLOTS, SLOT_META } from '@/lib/slots'
+import { SLOTS, SLOT_META, tintStyle } from '@/lib/slots'
 import { useStore } from '@/lib/store'
 import type { MealSlot, PlanEntry, Profile, Recipe } from '@/types'
 
@@ -71,10 +71,10 @@ export function Today({ onSnap }: { onSnap: () => void }) {
     <div className="animate-rise space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className={t.displayXl}>
             {isToday ? 'Today' : longDate(date)}
           </h1>
-          <p className="mt-0.5 text-[13px] text-white/45">
+          <p className="mt-0.5 text-[0.8125rem] text-muted">
             {isToday ? longDate(date) : 'Browsing another day'}
           </p>
         </div>
@@ -84,7 +84,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
             <button
               aria-label="Previous day"
               onClick={() => setDate(addDays(date, -1))}
-              className="grid size-9 place-items-center rounded-full text-white/60 transition hover:bg-white/12 hover:text-white cursor-pointer"
+              className="grid size-9 place-items-center rounded-full text-muted transition hover:bg-fill-hover hover:text-ink cursor-pointer"
             >
               <IconChevronLeft width={18} height={18} />
             </button>
@@ -92,7 +92,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
               onClick={() => setDate(todayISO())}
               className={cx(
                 'rounded-full px-3.5 py-1.5 text-[13px] font-medium transition cursor-pointer',
-                isToday ? 'text-white/40' : 'bg-white text-ink-950',
+                isToday ? 'text-faint' : 'bg-invert text-on-accent',
               )}
             >
               Today
@@ -100,7 +100,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
             <button
               aria-label="Next day"
               onClick={() => setDate(addDays(date, 1))}
-              className="grid size-9 place-items-center rounded-full text-white/60 transition hover:bg-white/12 hover:text-white cursor-pointer"
+              className="grid size-9 place-items-center rounded-full text-muted transition hover:bg-fill-hover hover:text-ink cursor-pointer"
             >
               <IconChevronRight width={18} height={18} />
             </button>
@@ -109,9 +109,11 @@ export function Today({ onSnap }: { onSnap: () => void }) {
       </div>
 
       {/* One summary per person in view */}
-      <div className={cx('grid gap-4', multi && 'lg:grid-cols-2')}>
-        {scoped.map((profile) => (
-          <DaySummary key={profile.id} profile={profile} date={date} compact={multi} />
+      <div className={cx('stagger grid gap-4', multi && 'lg:grid-cols-2')}>
+        {scoped.map((profile, i) => (
+          <div key={profile.id} style={{ '--i': i } as React.CSSProperties}>
+            <DaySummary profile={profile} date={date} compact={multi} />
+          </div>
         ))}
       </div>
 
@@ -120,19 +122,23 @@ export function Today({ onSnap }: { onSnap: () => void }) {
       </Button>
 
       {/* Meals */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {SLOTS.map((slot) => {
+      <div className="stagger grid gap-4 lg:grid-cols-2">
+        {SLOTS.map((slot, slotIndex) => {
           const meta = SLOT_META[slot]
           const groups = groupsFor(slot)
           const snaps = photosFor(slot)
 
           return (
-            <Card key={slot} className={cx('bg-gradient-to-br p-4 sm:p-5', meta.accent)}>
+            <Card
+              key={slot}
+              className="wash p-4 sm:p-5"
+              style={{ ...tintStyle(meta.tint), '--i': slotIndex } as React.CSSProperties}
+            >
               <div className="mb-3.5 flex items-center gap-3">
                 <span className="text-lg">{meta.emoji}</span>
                 <div className="flex-1">
-                  <h2 className="font-display font-semibold tracking-tight">{meta.label}</h2>
-                  <p className="text-[12px] text-white/40">{meta.time}</p>
+                  <h2 className={t.displayM}>{meta.label}</h2>
+                  <p className="text-[0.75rem] text-faint">{meta.time}</p>
                 </div>
                 <div className="flex gap-2">
                   {scoped.map((p) => {
@@ -145,10 +151,10 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                     return (
                       <span
                         key={p.id}
-                        className="flex items-center gap-1.5 rounded-full bg-white/8 py-0.5 pl-0.5 pr-2"
+                        className="flex items-center gap-1.5 rounded-full bg-fill py-0.5 pl-0.5 pr-2"
                       >
                         {multi && <Avatar profile={p} size="sm" />}
-                        <span className="font-display text-[13px] font-semibold tabular-nums text-white/75">
+                        <span className="font-display text-[13px] font-semibold tabular-nums text-soft">
                           {Math.round(kcal)}
                         </span>
                       </span>
@@ -168,8 +174,8 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                       className={cx(
                         'group flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border px-3 py-2.5 transition',
                         allEaten
-                          ? 'border-lime-300/25 bg-lime-300/10'
-                          : 'border-white/10 bg-white/5',
+                          ? 'border-accent/25 bg-accent-wash'
+                          : 'border-line bg-fill',
                       )}
                     >
                       {multi ? (
@@ -185,8 +191,8 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                                 className={cx(
                                   'grid size-8 place-items-center rounded-full border transition cursor-pointer',
                                   e.eaten
-                                    ? 'border-lime-300 bg-lime-300 text-ink-950'
-                                    : 'border-white/20 hover:border-lime-300/60',
+                                    ? 'border-accent bg-accent text-on-accent'
+                                    : 'border-line-strong hover:border-accent-line',
                                 )}
                               >
                                 {e.eaten ? (
@@ -205,8 +211,8 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                           className={cx(
                             'grid size-8 shrink-0 place-items-center rounded-full border transition cursor-pointer',
                             first.eaten
-                              ? 'border-lime-300 bg-lime-300 text-ink-950'
-                              : 'border-white/25 text-transparent hover:border-lime-300/60 hover:text-lime-300/50',
+                              ? 'border-accent bg-accent text-on-accent'
+                              : 'border-line-strong text-transparent hover:border-accent-line hover:text-accent/50',
                           )}
                         >
                           <IconCheck width={16} height={16} />
@@ -220,12 +226,12 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                         <span
                           className={cx(
                             'block truncate text-sm font-medium',
-                            allEaten && 'text-white/60 line-through decoration-white/25',
+                            allEaten && 'text-muted line-through decoration-faint',
                           )}
                         >
                           {group.recipe.emoji} {group.recipe.name}
                         </span>
-                        <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-white/45">
+                        <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.75rem] text-muted">
                           <span className="tabular-nums">{Math.round(m.calories)} kcal</span>
                           <span>·</span>
                           <span className="tabular-nums">{Math.round(m.protein)}g P</span>
@@ -237,7 +243,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                           {multi && group.entries.length === 1 && (
                             <>
                               <span>·</span>
-                              <span className="text-white/60">
+                              <span className="text-muted">
                                 {profileOf(first.profileId)?.name} only
                               </span>
                             </>
@@ -249,7 +255,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                         <div className="glass hidden items-center rounded-full px-1 sm:flex">
                           <button
                             aria-label="Fewer servings"
-                            className="size-7 rounded-full text-white/60 transition hover:bg-white/15 cursor-pointer"
+                            className="size-7 rounded-full text-muted transition hover:bg-fill-strong cursor-pointer"
                             onClick={() =>
                               group.entries.forEach((e) =>
                                 updatePlanEntry(e.id, {
@@ -260,12 +266,12 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                           >
                             –
                           </button>
-                          <span className="w-8 text-center text-[12px] tabular-nums text-white/70">
+                          <span className="w-8 text-center text-[12px] tabular-nums text-soft">
                             {first.servings}×
                           </span>
                           <button
                             aria-label="More servings"
-                            className="size-7 rounded-full text-white/60 transition hover:bg-white/15 cursor-pointer"
+                            className="size-7 rounded-full text-muted transition hover:bg-fill-strong cursor-pointer"
                             onClick={() =>
                               group.entries.forEach((e) =>
                                 updatePlanEntry(e.id, { servings: e.servings + 0.5 }),
@@ -281,7 +287,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                             target="_blank"
                             rel="noreferrer noopener"
                             aria-label="Open recipe link"
-                            className="grid size-9 place-items-center rounded-full text-white/30 transition hover:bg-white/10 hover:text-white"
+                            className="grid size-9 place-items-center rounded-full text-faint transition hover:bg-fill-hover hover:text-ink"
                           >
                             <IconLink width={15} height={15} />
                           </a>
@@ -289,7 +295,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                         <button
                           aria-label="Remove from plan"
                           onClick={() => group.entries.forEach((e) => removePlanEntry(e.id))}
-                          className="grid size-9 place-items-center rounded-full text-white/25 transition hover:bg-rose-500/15 hover:text-rose-300 cursor-pointer"
+                          className="grid size-9 place-items-center rounded-full text-faint transition hover:bg-danger-wash hover:text-danger cursor-pointer"
                         >
                           <IconTrash width={15} height={15} />
                         </button>
@@ -301,7 +307,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                 {snaps.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center gap-3 rounded-2xl border border-fuchsia-300/20 bg-fuchsia-300/8 px-3 py-2.5"
+                    className="flex items-center gap-3 rounded-2xl border border-line bg-fill px-3 py-2.5"
                   >
                     {p.image ? (
                       <img
@@ -310,7 +316,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                         className="size-9 shrink-0 rounded-xl object-cover"
                       />
                     ) : (
-                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-fill-hover">
                         <IconCamera width={16} height={16} />
                       </span>
                     )}
@@ -318,12 +324,12 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                       <span className="block truncate text-sm font-medium capitalize">
                         {p.label}
                       </span>
-                      <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-white/45">
+                      <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.75rem] text-muted">
                         <span className="tabular-nums">{p.calories} kcal</span>
                         <span>·</span>
                         <span className="tabular-nums">{Math.round(p.protein)}g P</span>
                         {multi && <Tag>{profileOf(p.profileId)?.name}</Tag>}
-                        <Tag className="bg-fuchsia-300/15 text-fuchsia-100/80">
+                        <Tag className="bg-accent-wash text-accent-ink">
                           {p.source === 'ai'
                             ? 'photo · AI'
                             : p.source === 'estimate'
@@ -335,7 +341,7 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                     <button
                       aria-label="Delete log"
                       onClick={() => removePhoto(p.id)}
-                      className="grid size-9 shrink-0 place-items-center rounded-full text-white/25 transition hover:bg-rose-500/15 hover:text-rose-300 cursor-pointer"
+                      className="grid size-9 shrink-0 place-items-center rounded-full text-faint transition hover:bg-danger-wash hover:text-danger cursor-pointer"
                     >
                       <IconTrash width={15} height={15} />
                     </button>
@@ -343,14 +349,14 @@ export function Today({ onSnap }: { onSnap: () => void }) {
                 ))}
 
                 {!groups.length && !snaps.length && (
-                  <p className="rounded-2xl border border-dashed border-white/12 px-3 py-4 text-center text-[13px] text-white/35">
+                  <p className="rounded-2xl border border-dashed border-line px-3 py-4 text-center text-[0.8125rem] text-faint">
                     Nothing planned yet
                   </p>
                 )}
 
                 <button
                   onClick={() => setPicking(slot)}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-white/15 px-3 py-3 text-[13px] text-white/50 transition hover:border-lime-300/40 hover:bg-white/5 hover:text-white cursor-pointer"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-line px-3 py-3 text-[0.8125rem] text-muted transition hover:border-accent-line hover:bg-fill hover:text-ink cursor-pointer"
                 >
                   <IconPlus width={15} height={15} /> Add to {meta.label.toLowerCase()}
                 </button>
@@ -399,8 +405,8 @@ function DaySummary({
       <div className="mb-4 flex items-center gap-2.5">
         <Avatar profile={profile} />
         <div className="flex-1">
-          <h2 className="font-display font-semibold tracking-tight">{profile.name}</h2>
-          <p className="text-[12px] text-white/40">
+          <h2 className={t.displayM}>{profile.name}</h2>
+          <p className="text-[0.75rem] text-faint">
             {profile.diet === 'vegetarian' ? 'Vegetarian · no egg' : 'Eats everything'}
           </p>
         </div>
@@ -408,8 +414,8 @@ function DaySummary({
           className={cx(
             'rounded-full px-2.5 py-1 text-[12px] tabular-nums',
             planned.calories > profile.calorieGoal
-              ? 'bg-orange-400/15 text-orange-200'
-              : 'bg-lime-300/15 text-lime-200',
+              ? 'bg-warn-wash text-fat'
+              : 'bg-accent-wash text-accent-ink',
           )}
         >
           {Math.round(planned.calories)} planned
@@ -433,32 +439,29 @@ function DaySummary({
             label="Protein"
             value={eaten.protein}
             goal={profile.proteinGoal}
-            color="bg-gradient-to-r from-sky-300 to-cyan-300"
+            tone="protein"
           />
           <MacroBar
             label="Carbs"
             value={eaten.carbs}
             goal={profile.carbGoal}
-            color="bg-gradient-to-r from-lime-300 to-emerald-300"
+            tone="carbs"
           />
           <MacroBar
             label="Fat"
             value={eaten.fat}
             goal={profile.fatGoal}
-            color="bg-gradient-to-r from-orange-300 to-amber-300"
+            tone="fat"
           />
           <div className="pt-1">
-            <SplitBar
-              protein={eaten.protein * 4}
-              carbs={eaten.carbs * 4}
-              fat={eaten.fat * 9}
-            />
+            <div className={cx('mb-1.5 text-faint', t.micro)}>Calorie split</div>
+            <SplitBar protein={eaten.protein * 4} carbs={eaten.carbs * 4} fat={eaten.fat * 9} />
           </div>
         </div>
       </div>
 
       {eaten.calories === 0 && (
-        <p className="mt-4 rounded-2xl bg-white/5 px-3.5 py-2.5 text-[13px] text-white/40">
+        <p className="mt-4 rounded-2xl bg-fill px-3.5 py-2.5 text-[0.8125rem] text-faint">
           🍽️ Nothing logged yet — tick a meal off below, or snap a photo.
         </p>
       )}
