@@ -4,7 +4,7 @@ import { IconClock, IconLink, IconPlay, IconPlus, IconSearch } from '@/component
 import { Button, Chip, Empty, Input, Modal, Tag, cx, type as t } from '@/components/ui'
 import { SLOTS, SLOT_META } from '@/lib/slots'
 import { AISLE_META, fmtQty } from '@/lib/grocery'
-import { suitsDiet } from '@/lib/profiles'
+import { suitsProfile } from '@/lib/profiles'
 import type { MealSlot, Profile, Recipe } from '@/types'
 
 const CUISINES = [
@@ -106,14 +106,14 @@ export function RecipePicker({
     [targets, chosen],
   )
 
-  const blockedFor = (r: Recipe) => forProfiles.filter((p) => !suitsDiet(r, p.diet))
+  const blockedFor = (r: Recipe) => forProfiles.filter((p) => !suitsProfile(r, p))
 
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return recipes
       .filter((r) => (active ? r.slots.includes(active) : true))
       .filter((r) => cuisine === 'all' || r.cuisine === cuisine)
-      .filter((r) => showAll || forProfiles.every((p) => suitsDiet(r, p.diet)))
+      .filter((r) => showAll || forProfiles.every((p) => suitsProfile(r, p)))
       .filter(
         (r) =>
           !needle ||
@@ -126,7 +126,7 @@ export function RecipePicker({
   }, [recipes, active, cuisine, q, showAll, forProfiles])
 
   const pick = (r: Recipe) => {
-    const eligible = forProfiles.filter((p) => suitsDiet(r, p.diet)).map((p) => p.id)
+    const eligible = forProfiles.filter((p) => suitsProfile(r, p)).map((p) => p.id)
     if (!eligible.length) return
     onPick(r, eligible)
     onClose()
@@ -137,7 +137,7 @@ export function RecipePicker({
     : recipes.filter(
         (r) =>
           (!active || r.slots.includes(active)) &&
-          !forProfiles.every((p) => suitsDiet(r, p.diet)),
+          !forProfiles.every((p) => suitsProfile(r, p)),
       ).length
 
   return (

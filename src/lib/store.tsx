@@ -62,122 +62,121 @@ interface DaySpec {
  * rather than chosen by eye. Every day clears its protein target inside its
  * calorie budget, carries at least 30 g of fibre, spans at least three cuisines,
  * repeats nothing from the day before, and keeps Ruchi's column strictly
- * vegetarian and egg-free. Dj eats the same food except where a meat or fish
- * sibling is the natural swap.
+ * vegetarian — egg only where it is beaten into a batter.
  *
  * The two weeks share no meal at all: a breakfast, lunch or dinner served in
  * week one never comes back in week two, on either plate. Snacks do recur —
  * the protein-dense ones are what make 110 g and 140 g reachable inside the
  * calorie ceilings, and banning them across weeks leaves no valid days at all.
  *
- * The seed yoghurt bowl is pinned to two mornings of whichever week claims it —
- * it is what they actually eat, and a plan that optimises it away is answering
- * the wrong question.
+ * Dj's five boiled eggs are budgeted for, not planned around: the search leaves
+ * 358 kcal and 31.5 g of protein of his day free, because they land on every
+ * date whether or not the plan expects them.
  *
- * As seeded — week 1: Ruchi 1818 kcal / 111 g protein / 50 g fibre, Dj 1913 /
- * 140 / 45. Week 2: Ruchi 1835 / 112 / 53, Dj 1883 / 144 / 46.
+ * As seeded — week 1: Ruchi 1813 kcal / 110 g protein / 47 g fibre, Dj 2192 /
+ * 149 / 44. Week 2: Ruchi 1817 / 112 / 46, Dj 2199 / 179 / 43.
  */
 const WEEK1: DaySpec[] = [
   {
-    // Mon — Indian / Mexican / Asian / Salads / Middle Eastern
-    breakfast: 'r-dhokla',
-    lunch: ['r-black-bean-soup', 'r-chicken-burrito-bowl'],
+    // Mon — Continental / Salads / Asian / Indian / Middle Eastern
+    breakfast: ['r-pb-banana-toast', 'r-avocado-toast'],
+    lunch: 'r-sesame-slaw',
     dinner: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
-    snack: ['r-sesame-slaw', 'r-labneh-zaatar'],
+    snack: ['r-dhokla', 'r-labneh-zaatar'],
   },
   {
-    // Tue — Indian / Asian / Middle Eastern / Continental / Mexican
-    breakfast: ['r-paneer-bhurji', 'r-menemen'],
-    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
-    dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
-    snack: ['r-berry-protein-smoothie', 'r-black-bean-dip'],
+    // Tue — Continental / Indian / Asian / Middle Eastern / Mexican
+    breakfast: 'r-smoothie-bowl',
+    lunch: 'r-soya-keema',
+    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-tzatziki', 'r-black-bean-dip'],
   },
   {
-    // Wed — Continental / Salads / Middle Eastern / Asian / Italian
+    // Wed — Continental / Salads / Mexican / Asian / Middle Eastern
     breakfast: 'r-seed-yogurt-bowl',
     lunch: 'r-sesame-slaw',
-    dinner: ['r-mujadara', 'r-chicken-shawarma'],
-    snack: ['r-edamame', 'r-white-bean-dip'],
+    dinner: ['r-black-bean-soup', 'r-chicken-burrito-bowl'],
+    snack: ['r-edamame', 'r-labneh-zaatar'],
   },
   {
-    // Thu — Continental / Middle Eastern / Asian / Mexican / Indian
-    breakfast: 'r-overnight-oats',
-    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
-    dinner: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
-    snack: ['r-black-bean-dip', 'r-moong-chaat'],
-  },
-  {
-    // Fri — Indian / Italian / Asian / Salads / Middle Eastern
-    breakfast: 'r-dhokla',
-    lunch: ['r-pesto-gnocchi', 'r-turkey-meatballs'],
-    dinner: ['r-tempeh-stirfry', 'r-teriyaki-salmon-donburi'],
-    snack: ['r-sesame-slaw', 'r-tzatziki'],
-  },
-  {
-    // Sat — Continental / Asian / Indian
-    breakfast: 'r-seed-yogurt-bowl',
-    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
-    dinner: ['r-chana-masala', 'r-goan-fish-curry'],
-    snack: ['r-edamame', 'r-moong-chaat'],
-  },
-  {
-    // Sun — Continental / Asian / Middle Eastern / Italian
+    // Thu — Continental / Indian / Asian / Italian / Mexican
     breakfast: 'r-yoghurt-parfait',
-    lunch: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
-    dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
-    snack: ['r-berry-protein-smoothie', 'r-white-bean-dip'],
+    lunch: 'r-soya-keema',
+    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-white-bean-dip', 'r-black-bean-dip'],
+  },
+  {
+    // Fri — Continental / Salads / Asian / Italian
+    breakfast: 'r-overnight-oats',
+    lunch: 'r-sesame-slaw',
+    dinner: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
+    snack: ['r-edamame', 'r-bruschetta'],
+  },
+  {
+    // Sat — Continental / Indian / Asian / Middle Eastern
+    breakfast: 'r-seed-yogurt-bowl',
+    lunch: 'r-moong-chaat',
+    dinner: ['r-tempeh-stirfry', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-hummus-plate', 'r-dhokla'],
+  },
+  {
+    // Sun — Continental / Indian / Asian / Middle Eastern / Italian
+    breakfast: 'r-yoghurt-parfait',
+    lunch: 'r-soya-keema',
+    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-tzatziki', 'r-white-bean-dip'],
   },
 ]
 
 const WEEK2: DaySpec[] = [
   {
-    // Mon — Asian / Middle Eastern / Italian / Salads / Mexican
-    breakfast: 'r-congee',
-    lunch: ['r-fattoush-halloumi', 'r-harissa-prawns'],
-    dinner: ['r-minestrone', 'r-tuna-puttanesca'],
+    // Mon — Indian / Asian / Continental / Salads / Mexican
+    breakfast: 'r-dhokla',
+    lunch: ['r-tofu-pad-thai', 'r-tuna-poke'],
+    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
     snack: ['r-sesame-slaw', 'r-black-bean-dip'],
   },
   {
-    // Tue — Indian / Mexican / Asian / Continental
-    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
-    lunch: 'r-soya-keema',
-    dinner: ['r-sweet-potato-tacos', 'r-fish-tacos'],
+    // Tue — Asian / Italian / Salads / Continental
+    breakfast: 'r-congee',
+    lunch: ['r-caprese-panini', 'r-tuna-puttanesca'],
+    dinner: ['r-chickpea-halloumi-salad', 'r-souvlaki-bowl'],
     snack: ['r-edamame', 'r-berry-protein-smoothie'],
   },
   {
-    // Wed — Asian / Middle Eastern / Italian / Salads
-    breakfast: 'r-congee',
-    lunch: ['r-fattoush-halloumi', 'r-harissa-prawns'],
-    dinner: ['r-minestrone', 'r-tuna-puttanesca'],
-    snack: ['r-sesame-slaw', 'r-white-bean-dip'],
-  },
-  {
-    // Thu — Indian / Continental / Mexican
-    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
-    lunch: ['r-dal-tadka', 'r-chicken-tikka-masala'],
-    dinner: 'r-soya-keema',
-    snack: ['r-berry-protein-smoothie', 'r-black-bean-dip'],
-  },
-  {
-    // Fri — Continental / Asian / Indian / Middle Eastern
-    breakfast: 'r-smoothie-bowl',
-    lunch: ['r-tofu-pad-thai', 'r-tuna-poke'],
+    // Wed — Indian / Middle Eastern / Salads / Mexican
+    breakfast: 'r-dhokla',
+    lunch: ['r-mujadara', 'r-chicken-shawarma'],
     dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
-    snack: ['r-edamame', 'r-tzatziki'],
-  },
-  {
-    // Sat — Asian / Indian / Mexican / Salads
-    breakfast: 'r-congee',
-    lunch: 'r-soya-keema',
-    dinner: ['r-sweet-potato-tacos', 'r-fish-tacos'],
     snack: ['r-sesame-slaw', 'r-black-bean-dip'],
   },
   {
-    // Sun — Indian / Italian / Asian / Middle Eastern
+    // Thu — Indian / Middle Eastern / Continental / Asian
     breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
-    lunch: ['r-minestrone', 'r-tuna-puttanesca'],
+    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
+    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
+    snack: ['r-edamame', 'r-berry-protein-smoothie'],
+  },
+  {
+    // Fri — Asian / Indian / Middle Eastern
+    breakfast: 'r-congee',
+    lunch: ['r-tofu-pad-thai', 'r-tuna-poke'],
+    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
+    snack: ['r-hummus-plate', 'r-tzatziki'],
+  },
+  {
+    // Sat — Indian / Italian / Middle Eastern / Salads
+    breakfast: 'r-dhokla',
+    lunch: ['r-caprese-panini', 'r-tuna-puttanesca'],
+    dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
+    snack: ['r-sesame-slaw', 'r-white-bean-dip'],
+  },
+  {
+    // Sun — Asian / Indian / Continental / Mexican
+    breakfast: 'r-congee',
+    lunch: ['r-palak-paneer', 'r-chicken-tikka-masala'],
     dinner: ['r-tofu-pad-thai', 'r-tuna-poke'],
-    snack: ['r-edamame', 'r-tzatziki'],
+    snack: ['r-berry-protein-smoothie', 'r-black-bean-dip'],
   },
 ]
 
@@ -189,6 +188,24 @@ function seedPlan(anchor: string, profiles: Profile[]): PlanEntry[] {
       entries.push({ id: uid(), profileId: profile.id, date, slot, recipeId, servings: 1, eaten: false })
     })
   }
+  // staples first, so day one already has them
+  for (let i = 0; i < 14; i++) {
+    const date = addDays(anchor, i)
+    for (const profile of profiles) {
+      for (const recipeId of profile.staples ?? []) {
+        entries.push({
+          id: uid(),
+          profileId: profile.id,
+          date,
+          slot: 'breakfast',
+          recipeId,
+          servings: 1,
+          eaten: false,
+        })
+      }
+    }
+  }
+
   ;[...WEEK1, ...WEEK2].forEach((day, i) => {
     const date = addDays(anchor, i)
     push(date, 'breakfast', day.breakfast)
@@ -214,6 +231,7 @@ function freshState(): AppState {
     extras: [],
     chat: [],
     memories: [],
+    stapled: [],
   }
 }
 
@@ -256,6 +274,7 @@ function load(): AppState {
       // older save carries more than the cap
       chat: (parsed.chat ?? []).slice(-CHAT_CAP),
       memories: parsed.memories ?? [],
+      stapled: parsed.stapled ?? [],
     }
   } catch {
     return freshState()
@@ -295,10 +314,17 @@ interface Store {
   deleteRecipe: (id: string) => void
   addPhoto: (log: Omit<PhotoLog, 'id' | 'createdAt'>) => void
   removePhoto: (id: string) => void
+  /** correct a logged meal in place, rather than logging a second copy */
+  updatePhoto: (id: string, patch: Partial<PhotoLog>) => void
   toggleChecked: (key: string) => void
   clearChecked: (week: number) => void
   addExtra: (week: number, text: string) => void
   removeExtra: (id: string) => void
+  /**
+   * Put each profile's staples on any of `dates` that has not had them yet.
+   * Idempotent, and a date is marked once, so deleting a staple sticks.
+   */
+  syncStaples: (dates: string[]) => void
   /** append one turn to the NOVA conversation */
   addTurn: (turn: Omit<ChatTurn, 'id' | 'at'>) => ChatTurn
   clearChat: () => void
@@ -483,6 +509,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       removePhoto: (id) => patch((s) => ({ ...s, photos: s.photos.filter((p) => p.id !== id) })),
 
+      updatePhoto: (id, p) =>
+        patch((s) => ({
+          ...s,
+          photos: s.photos.map((x) => (x.id === id ? { ...x, ...p, id: x.id } : x)),
+        })),
+
       toggleChecked: (key) =>
         patch((s) => ({
           ...s,
@@ -498,6 +530,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         patch((s) => ({ ...s, extras: [...s.extras, { id: uid(), week, text }] })),
 
       removeExtra: (id) => patch((s) => ({ ...s, extras: s.extras.filter((e) => e.id !== id) })),
+
+      syncStaples: (dates) =>
+        patch((s) => {
+          const todo = dates.filter((d) => !s.stapled.includes(d))
+          if (!todo.length) return s
+          const added: PlanEntry[] = []
+          for (const date of todo) {
+            for (const profile of s.profiles) {
+              for (const recipeId of profile.staples ?? []) {
+                const already = s.plan.some(
+                  (e) => e.date === date && e.profileId === profile.id && e.recipeId === recipeId,
+                )
+                if (already) continue
+                added.push({
+                  id: uid(),
+                  profileId: profile.id,
+                  date,
+                  slot: 'breakfast',
+                  recipeId,
+                  servings: 1,
+                  eaten: false,
+                })
+              }
+            }
+          }
+          return { ...s, plan: [...s.plan, ...added], stapled: [...s.stapled, ...todo] }
+        }),
 
       addTurn: (turn) => {
         const full: ChatTurn = { ...turn, id: uid(), at: Date.now() }

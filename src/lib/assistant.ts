@@ -56,6 +56,7 @@ export function buildContext(
       `  whole day as planned: ${Math.round(planned.calories)} kcal, ${Math.round(planned.protein)} g protein, ${Math.round(planned.fibre)} g fibre` +
         ` (${Math.round(split.protein)}% P / ${Math.round(split.carbs)}% C / ${Math.round(split.fat)}% F)`,
       `  remaining against goal: ${Math.round(p.calorieGoal - eaten.calories)} kcal, ${Math.round(p.proteinGoal - eaten.protein)} g protein`,
+      `  diet: ${p.diet === 'vegetarian' ? 'vegetarian' : 'eats everything'}${p.eggInBatter ? ', egg only when baked into a batter' : ''}${p.staples?.length ? `; every day: ${p.staples.map((id) => recipes.get(id)?.name ?? id).join(', ')}` : ''}`,
     )
   }
 
@@ -190,7 +191,15 @@ How to answer:
 - When they tell you something durable about how they eat — a dislike, an allergy, a routine, a standing preference — call remember with one short sentence. Do not remember what they ate today, and never remember something they did not say.
 - If a request is ambiguous about who it is for, and only one person is in view, assume that person. Otherwise ask.
 - Portions matter: quote the serving weight when you recommend a dish.
-- No preamble, no "certainly", no restating the question.`
+- No preamble, no "certainly", no restating the question.
+
+Suggest first, confirm after — do not make them do data entry:
+- The plan already says what they are eating and every dish already carries its ingredients and macros. So when someone asks what to eat, propose actual dishes by name with their kcal and protein, and offer to put them on the plan. Do not ask them to tell you the calories of something in the library.
+- Ruchi and Dj eat the same meals unless a swap is called for. Propose Ruchi's day first — she is the constraint, being vegetarian — and then say what Dj adds or swaps in to reach his higher protein target. He eats meat and fish; a lean non-vegetarian add-on for him is usually the right answer rather than a whole separate menu.
+- Logging is for what went off-plan. When a planned meal was eaten, tick it off with mark_eaten instead of logging it again. Reach for log_meal only for something that was not on the plan.
+- When a logged meal was wrong, correct it with edit_log. Never log a second copy of the same meal and ask them to delete the first.
+- Dj has five boiled eggs every day; they are already on his plan as a staple, so never suggest them again and never log them.
+- Ruchi eats egg beaten into a batter — pancakes — but not egg as egg. Suggest a pancake to her freely; never suggest an omelette, a boiled egg or a shakshuka.`
 
 /* ─────────────────────────── tools ─────────────────────────── */
 
@@ -266,6 +275,39 @@ export const TOOLS: ToolSpec[] = [
         eaten: { type: 'boolean', description: 'true to tick, false to untick' },
       },
       required: ['person', 'slot'],
+    },
+  },
+  {
+    name: 'edit_log',
+    description:
+      'Correct a meal already logged — the portion was wrong, or the estimate was off. Match it by what it was called. Use this rather than logging a second copy.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        person: { type: 'string', description: 'Ruchi or Dj' },
+        label: { type: 'string', description: 'the logged meal to correct, by name' },
+        calories: { type: 'number' },
+        protein: { type: 'number' },
+        carbs: { type: 'number' },
+        fat: { type: 'number' },
+        fibre: { type: 'number' },
+        new_label: { type: 'string', description: 'rename it, if the dish itself was wrong' },
+        date: { type: 'string', description: 'yyyy-mm-dd, defaults to today' },
+      },
+      required: ['person', 'label'],
+    },
+  },
+  {
+    name: 'remove_log',
+    description: 'Delete a logged meal that should not be there at all.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        person: { type: 'string', description: 'Ruchi or Dj' },
+        label: { type: 'string', description: 'the logged meal, by name' },
+        date: { type: 'string', description: 'yyyy-mm-dd, defaults to today' },
+      },
+      required: ['person', 'label'],
     },
   },
   {

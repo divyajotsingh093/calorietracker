@@ -149,7 +149,7 @@ export const ING = {
   'sesame seeds':             { n: [573, 17.7, 23.4, 49.7, 11.8 ], u: { tbsp: 9 } },
   'desiccated coconut':       { n: [660,  6.9, 23.7, 64.5, 16.3 ] },
   'olive oil':                { n: [884,  0,    0,   100,  0 ], u: { tbsp: 13.5 } },
-  'neutral oil':              { n: [884,  0,    0,   100,  0 ], u: { tbsp: 13.5 } },
+  'neutral oil':              { n: [884,  0,    0,   100,  0 ], u: { tbsp: 13.5, tsp: 4.5 } },
   'sesame oil':               { n: [884,  0,    0,   100,  0 ], u: { tbsp: 13.5, tsp: 4.5 } },
   'coconut milk':             { n: [197,  2.0,  2.8, 21.3, 0 ], u: { ml: 1.0 } },
 

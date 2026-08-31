@@ -37,6 +37,15 @@ switches off under `prefers-reduced-motion`.
 
 ## Two people, two plans
 
+Ruchi is vegetarian and does not eat egg — except beaten into a batter, so
+pancakes are fine and an omelette is not. That is a per-person flag rather than a
+property of the diet, since `vegetarian` alone cannot say it.
+
+Dj eats five boiled eggs every morning. They are a **staple**: laid onto every
+date as it comes into view, never logged by hand, and budgeted for by the planner,
+which leaves 358 kcal and 31.5 g of protein of his day free for them. Remove one
+and it stays removed — a date is stapled once.
+
 The app ships with two profiles:
 
 | | Diet | Daily goal |
@@ -79,7 +88,7 @@ one readable card per day. **Repeat into week 2** clones a whole week; each day
 has its own menu to copy it to tomorrow or next week. Bulk actions respect the
 current profile scope. Per-day calories flag anything over 2000.
 
-**Dish library** — 81 dishes across Indian, Asian, Middle Eastern, Italian,
+**Dish library** — 83 dishes across Indian, Asian, Middle Eastern, Italian,
 Continental, Mexican and salads, each tagged with what it contains (meat / fish /
 egg / dairy) so diet filtering is exact. Every dish carries **per-serving nutrition
 derived from its own ingredients**, the **weight of one portion in grams**, a full
@@ -106,6 +115,13 @@ they sum to the day's total — against their calorie goal as a reference line.
 Both charts share one y-axis so the two people can actually be compared, hovering
 or tab-focusing a day fills the readout above the chart, and every number is in a
 table under *Show the numbers* so nothing is gated behind a hover.
+
+NOVA suggests before it asks. The plan already knows what they are eating and
+every dish carries its ingredients and macros, so "what should we eat today?"
+gets actual dishes with their numbers, and Ruchi's day is proposed first — she is
+the constraint — followed by what Dj adds or swaps to reach his higher protein
+target. Logging is only for what went off-plan: a planned meal gets ticked off,
+and a mis-logged one gets corrected in place rather than logged twice.
 
 The Console is given today's numbers, the fortnight's plan and every dish in the
 library, and it **runs the app**: log a meal, plan or remove a dish, tick a meal
@@ -238,7 +254,7 @@ Requires Node 20+.
 
 ```
 src/
-  data/recipes.ts       81-dish library, tagged by cuisine and contents
+  data/recipes.ts       83-dish library, tagged by cuisine and contents
   data/foods.ts         per-100g reference table for offline photo estimates
   lib/profiles.ts       the two profiles and the diet rules
   lib/store.tsx         app state, persistence, scope-aware mutations, week seed

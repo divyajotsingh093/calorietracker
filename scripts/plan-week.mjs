@@ -61,7 +61,17 @@ const SWAP = {
   'r-paneer-bhurji': 'r-menemen', 'r-ful-medames': 'r-menemen',
   'r-fattoush-halloumi': 'r-harissa-prawns',
 }
-const GOAL = { rk: 1850, rp: 110, dk: 1950, dp: 140, fib: 30 }
+const GOAL = { rk: 1850, rp: 110, dk: 2250, dp: 140, fib: 30 }
+
+/**
+ * Standing items already on a plate every day, which the searched meals have to
+ * leave room for. Dj eats five boiled eggs every morning: 358 kcal and 31.5 g of
+ * protein that arrive whether or not the planner knows about them, so planning
+ * to his full 1950 would put every single day over budget.
+ *
+ * Keep in step with `staples` on the profiles in src/lib/profiles.ts.
+ */
+const STAPLE = { dj: { k: 358, p: 31.5, fib: 0 } }
 
 /**
  * Dishes the household actually eats, which the plan must not drop just
@@ -92,9 +102,14 @@ for (const b of B) for (const l of L) for (const dn of D)
     const dAll = [...dj, S[i], S[j]]
     // several veg dishes share a meaty sibling — never serve Dj the same twice
     if (new Set(dAll.map((x) => x.id)).size < 5) continue
-    const dk = dAll.reduce((a, x) => a + x.k, 0), dp = dAll.reduce((a, x) => a + x.p, 0)
-    if (dk > GOAL.dk || dk < GOAL.dk - 300 || dp < GOAL.dp - slack) continue
-    days.push({ picks, dj, rk, rp, rf, dk, dp, df: dAll.reduce((a, x) => a + x.fib, 0) })
+    const dk = dAll.reduce((a, x) => a + x.k, 0) + STAPLE.dj.k
+    const dp = dAll.reduce((a, x) => a + x.p, 0) + STAPLE.dj.p
+    // Dj's fibre was never checked — only Ruchi's — which let a day through at
+    // 26 g against a 30 g goal. His swaps replace pulses with meat, so his
+    // figure is the lower of the two and the one that needs the guard.
+    const df = dAll.reduce((a, x) => a + x.fib, 0) + STAPLE.dj.fib
+    if (dk > GOAL.dk || dk < GOAL.dk - 300 || dp < GOAL.dp - slack || df < GOAL.fib) continue
+    days.push({ picks, dj, rk, rp, rf, dk, dp, df })
   }
 console.error(`acceptable days: ${days.length}`)
 

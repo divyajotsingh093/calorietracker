@@ -19,8 +19,14 @@ export type Cuisine =
   | 'Mexican'
   | 'Salads'
 
-/** What a dish contains, for diet filtering. Dairy is tracked but allowed. */
-export type Contains = 'meat' | 'fish' | 'egg' | 'dairy'
+/**
+ * What a dish contains, for diet filtering. Dairy is tracked but allowed.
+ *
+ * `egg-in-batter` is egg beaten into a mix and cooked through — pancakes, a
+ * cake — as opposed to `egg`, which is egg you can see and taste as egg.
+ * Ruchi eats the first and not the second, and one flag cannot express that.
+ */
+export type Contains = 'meat' | 'fish' | 'egg' | 'egg-in-batter' | 'dairy'
 
 export interface Ingredient {
   /** Canonical shopping name, e.g. "rolled oats" */
@@ -67,7 +73,11 @@ export interface Recipe {
   edited?: boolean
 }
 
-/** `vegetarian` here means ovo-free: no meat, no fish, no egg. */
+/**
+ * `vegetarian` here means no meat, no fish, and no egg served as egg. Whether
+ * egg baked into a batter is allowed is a per-person call — see
+ * `Profile.eggInBatter`.
+ */
 export type Diet = 'vegetarian' | 'omnivore'
 
 export interface Profile {
@@ -82,6 +92,18 @@ export interface Profile {
   carbGoal: number
   fatGoal: number
   fibreGoal: number
+  /**
+   * Eats egg when it is beaten into a batter and cooked through, even though
+   * they do not eat egg as egg. True for Ruchi, who has pancakes.
+   */
+  eggInBatter?: boolean
+  /**
+   * Dishes on this person's plate every single day, added to each date as it
+   * comes into view rather than logged by hand. Dj's five boiled eggs are the
+   * reason this exists: a constant is not news, and asking someone to record it
+   * every morning is the app doing its job badly.
+   */
+  staples?: string[]
 }
 
 export interface PlanEntry {
@@ -186,4 +208,9 @@ export interface AppState {
   chat: ChatTurn[]
   /** what NOVA has learned about the household */
   memories: Memory[]
+  /**
+   * Dates whose staples have already been laid down, so removing one sticks
+   * instead of reappearing the next time the date scrolls into view.
+   */
+  stapled: string[]
 }

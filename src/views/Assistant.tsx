@@ -50,12 +50,12 @@ const ACCENT_IDS: string[] = ACCENTS.map((a) => a.id)
 const ISO = /^\d{4}-\d{2}-\d{2}$/
 
 const PROMPTS = [
-  'What is left in my budget today?',
+  'What should we eat today?',
+  'What can Dj add to hit his protein?',
   'Suggest a high-protein dinner under 550 kcal',
   'Am I short on fibre this week?',
-  'Log a flat white and a banana for me',
   'Swap tomorrow’s lunch for something Italian',
-  'What should I prep tonight for tomorrow?',
+  'Fix the lunch I logged — it was a smaller portion',
 ]
 
 export interface AssistantProps {
@@ -178,6 +178,53 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
           return {
             name: call.name,
             detail: `${want ? 'Ticked off' : 'Un-ticked'} ${slot} on ${date} for ${people.map((p) => p.name).join(' & ')}`,
+            ok: true,
+          }
+        }
+
+        case 'edit_log':
+        case 'remove_log': {
+          const needle = String(a.label ?? '').trim().toLowerCase()
+          const ids = new Set(people.map((p) => p.id))
+          const hits = state.photos.filter(
+            (l) =>
+              l.date === date &&
+              ids.has(l.profileId) &&
+              (l.label.toLowerCase().includes(needle) || needle.includes(l.label.toLowerCase())),
+          )
+          if (!needle) return fail('Which logged meal?')
+          if (!hits.length) return fail(`Nothing called “${a.label}” is logged on ${date}`)
+
+          if (call.name === 'remove_log') {
+            hits.forEach((l) => store.removePhoto(l.id))
+            return {
+              name: call.name,
+              detail: `Removed ${hits[0].label} (${Math.round(hits[0].calories)} kcal)`,
+              ok: true,
+            }
+          }
+
+          // Only the fields actually given change; a correction to the portion
+          // should not silently zero the macros that came with it.
+          const num = (v: unknown, fallback: number) =>
+            Number.isFinite(Number(v)) && v !== undefined && v !== null && v !== ''
+              ? Math.round(Number(v) * 10) / 10
+              : fallback
+          for (const l of hits) {
+            store.updatePhoto(l.id, {
+              label: String(a.new_label ?? l.label),
+              calories: Math.round(num(a.calories, l.calories)),
+              protein: num(a.protein, l.protein),
+              carbs: num(a.carbs, l.carbs),
+              fat: num(a.fat, l.fat),
+              fibre: num(a.fibre, l.fibre),
+              note: 'Corrected by NOVA',
+            })
+          }
+          const before = hits[0]
+          return {
+            name: call.name,
+            detail: `Corrected ${before.label}: ${Math.round(before.calories)} → ${Math.round(num(a.calories, before.calories))} kcal`,
             ok: true,
           }
         }
@@ -306,7 +353,18 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
           return fail(`Unknown tool ${call.name}`)
       }
     },
-    [findProfiles, onNavigate, recipeMap, state.memories, state.plan, state.profiles, store, theme, today],
+    [
+      findProfiles,
+      onNavigate,
+      recipeMap,
+      state.memories,
+      state.photos,
+      state.plan,
+      state.profiles,
+      store,
+      theme,
+      today,
+    ],
   )
 
   /* ─────────── the turn ─────────── */

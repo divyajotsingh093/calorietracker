@@ -146,13 +146,21 @@ export function Recipes() {
                       <span className="rounded-full bg-accent-wash px-2 py-0.5 text-[11px] text-accent-ink">
                         🌿 veg
                       </span>
-                    ) : (
+                    ) : r.contains.includes('meat') ||
+                      r.contains.includes('fish') ||
+                      r.contains.includes('egg') ? (
                       <span className="rounded-full bg-danger-wash px-2 py-0.5 text-[11px] text-danger">
                         {r.contains.includes('meat')
                           ? 'meat'
                           : r.contains.includes('fish')
                             ? 'fish'
                             : 'egg'}
+                      </span>
+                    ) : (
+                      /* egg beaten into a batter — Ruchi eats these, so the
+                         plain "egg" badge would read as a block that is not one */
+                      <span className="rounded-full bg-warn-wash px-2 py-0.5 text-[11px] text-warn">
+                        egg in batter
                       </span>
                     )}
                     {r.custom && (
