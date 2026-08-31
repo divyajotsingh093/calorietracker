@@ -95,7 +95,15 @@ export default async function handler(req: Request): Promise<Response> {
     messages: body.messages,
     max_tokens: Math.min(Number(body.max_tokens) || 1000, MAX_TOKENS),
   }
-  for (const k of ['tools', 'tool_choice', 'reasoning', 'response_format'] as const) {
+  for (const k of [
+    'tools',
+    'tool_choice',
+    'reasoning',
+    'response_format',
+    'frequency_penalty',
+    'presence_penalty',
+    'temperature',
+  ] as const) {
     if (body[k] !== undefined) forwarded[k] = body[k]
   }
 

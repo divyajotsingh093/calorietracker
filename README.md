@@ -186,6 +186,13 @@ Requires Node 20+.
   in the source or in a `VITE_` variable ends up inside the JavaScript bundle
   every visitor downloads.
 
+  **Small models sometimes come apart.** A free model asked to pick from 81 dish
+  ids can start enumerating them and never stop — pages of `r-? r-? r-?`. NOVA
+  detects a reply that has collapsed into repetition and says so instead of
+  printing it, and it never shows a model's reasoning trace as an answer. The
+  dish index is grouped by meal for the same reason: under a `## dinner` heading
+  the candidates are there to be read, rather than reasoned about aloud.
+
   **Free keys are the usual cause of "OpenRouter issues".** A free OpenRouter
   account allows 50 requests a day and 20 a minute, and a request that fails
   still spends one of them. Adding $10 of credit to the account raises the daily

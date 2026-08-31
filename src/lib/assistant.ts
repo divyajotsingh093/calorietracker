@@ -158,16 +158,24 @@ export function buildHabits(
   return lines.length ? ['', '# What the plan shows about them', ...lines].join('\n') : ''
 }
 
-/** A one-line-per-dish index, so the model recommends real dishes by real id. */
+/**
+ * A one-line-per-dish index, so the model recommends real dishes by real id.
+ *
+ * Grouped by meal rather than listed flat. Asked for "an Italian dinner" against
+ * a flat list of 81, small models start reasoning aloud about which ids exist
+ * and can talk themselves into a loop; under a `## dinner` heading the
+ * candidates are simply there to be read.
+ */
 export function buildLibrary(recipes: Recipe[]): string {
-  return recipes
-    .map(
-      (r) =>
-        `${r.id} | ${r.name} | ${r.cuisine} | ${r.slots.join('/')} | ${r.calories} kcal ` +
-        `${r.protein}P ${r.carbs}C ${r.fat}F ${r.fibre}fib | ${r.servingGrams} g | ` +
-        (suitsDiet(r, 'vegetarian') ? 'veg' : r.contains.join('+')),
-    )
-    .join('\n')
+  const line = (r: Recipe) =>
+    `${r.id} | ${r.name} | ${r.cuisine} | ${r.calories} kcal ` +
+    `${r.protein}P ${r.carbs}C ${r.fat}F ${r.fibre}fib | ${r.servingGrams} g | ` +
+    (suitsDiet(r, 'vegetarian') ? 'veg' : r.contains.join('+'))
+
+  return SLOT_ORDER.map((slot) => {
+    const here = recipes.filter((r) => r.slots.includes(slot))
+    return [`## ${slot}`, ...here.map(line)].join('\n')
+  }).join('\n\n')
 }
 
 export const SYSTEM_PROMPT = `You are NOVA, the resident nutrition assistant inside Nourish, a meal and calorie tracker used by two people: Ruchi (vegetarian, no egg) and Dj (eats everything).
@@ -408,6 +416,8 @@ export interface Reply {
   calls: ToolCall[]
   /** why the model stopped — 'length' means it ran out of budget mid-answer */
   finish: string
+  /** the model produced only a scratchpad, or text that had come apart */
+  noAnswer?: 'reasoning-only' | 'degenerate'
   /**
    * The assistant message exactly as the provider returned it. Tool protocols
    * require echoing it back verbatim on the next turn; rebuilding it by hand is
@@ -529,6 +539,8 @@ export async function askOpenRouter(
         // Keep the thinking short so the budget goes on the answer. Every model
         // here can reason; none of them needs to for "what is left today?".
         reasoning: { effort: 'low' },
+        // Push back on the repetition loop rather than only catching it after.
+        frequency_penalty: 0.4,
         messages: [{ role: 'system', content: system }, ...messages],
         ...(withTools
           ? {
@@ -575,16 +587,46 @@ export async function askOpenRouter(
     return { id: c.id, name: c.function?.name ?? '', input }
   })
 
-  // A reasoning model that spent its whole budget thinking leaves content empty.
-  // Its scratchpad is the only thing it actually said, so it beats saying nothing.
-  const text = (msg.content ?? '').trim() || (msg.reasoning ?? '').trim()
+  const content = (msg.content ?? '').trim()
+
+  // Never show the scratchpad. Falling back to `reasoning` when content was
+  // empty looked like a way to salvage a turn, but a model that produced no
+  // answer is usually mid-collapse, and what it prints is its own muttering —
+  // "r-? r-? r-?" for pages. An honest "nothing came back" beats that.
+  const noAnswer: Reply['noAnswer'] = content
+    ? degenerate(content)
+      ? 'degenerate'
+      : undefined
+    : (msg.reasoning ?? '').trim()
+      ? 'reasoning-only'
+      : undefined
 
   return {
-    text,
+    text: noAnswer ? '' : content,
     calls,
     finish: choice?.finish_reason ?? 'stop',
+    noAnswer,
     echo: { role: 'assistant', content: msg.content ?? '', tool_calls: msg.tool_calls },
   }
+}
+
+/**
+ * True when a reply has come apart into repetition.
+ *
+ * Small models given a list of 81 dish ids sometimes start enumerating them and
+ * never stop — "r-? r-? r-?" for hundreds of tokens. It is unmistakable to a
+ * reader and cheap to catch: real prose keeps introducing new words, and a
+ * collapsed reply stops doing that.
+ */
+export function degenerate(text: string): boolean {
+  const words = text.toLowerCase().match(/[\w-]+/g) ?? []
+  if (words.length < 40) return false
+  const unique = new Set(words).size
+  if (unique / words.length < 0.15) return true
+  // or one token taking over the whole reply
+  const counts = new Map<string, number>()
+  for (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1)
+  return Math.max(...counts.values()) / words.length > 0.25
 }
 
 /** The tool-result turn, in whichever shape the provider expects. */
@@ -621,6 +663,12 @@ export function resultMessages(
  * a truncated answer, a refused tool and a dead model behind the same word.
  */
 export function emptyReplyNote(reply: Reply, actions: ActionRecord[]): string {
+  if (reply.noAnswer === 'degenerate') {
+    return 'That model’s reply came apart into repetition — a small model losing the thread rather than anything you did. Ask again, or switch model in Settings.'
+  }
+  if (reply.noAnswer === 'reasoning-only') {
+    return 'The model thought but never wrote an answer. Ask again, or switch to a model with tool calling in Settings.'
+  }
   if (reply.finish === 'length') {
     return actions.length
       ? 'I made the change below, but ran out of reply budget before writing it up.'
