@@ -69,114 +69,114 @@ interface DaySpec {
  * the protein-dense ones are what make 110 g and 140 g reachable inside the
  * calorie ceilings, and banning them across weeks leaves no valid days at all.
  *
- * Dj's five boiled eggs are budgeted for, not planned around: the search leaves
- * 358 kcal and 31.5 g of protein of his day free, because they land on every
- * date whether or not the plan expects them.
+ * Dj's five boiled eggs are his breakfast, so nothing is planned into that slot
+ * for him and his day is the eggs plus lunch, dinner and two snacks. The
+ * breakfast each day names is Ruchi's alone.
  *
- * As seeded — week 1: Ruchi 1813 kcal / 110 g protein / 47 g fibre, Dj 2192 /
- * 149 / 44. Week 2: Ruchi 1817 / 112 / 46, Dj 2199 / 179 / 43.
+ * As seeded — week 1: Ruchi 1819 kcal / 112 g protein / 51 g fibre, Dj 1834 /
+ * 149 / 36. Week 2: Ruchi 1819 / 112 / 51, Dj 1876 / 148 / 38.
  */
 const WEEK1: DaySpec[] = [
   {
-    // Mon — Continental / Salads / Asian / Indian / Middle Eastern
-    breakfast: ['r-pb-banana-toast', 'r-avocado-toast'],
-    lunch: 'r-sesame-slaw',
-    dinner: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
-    snack: ['r-dhokla', 'r-labneh-zaatar'],
-  },
-  {
-    // Tue — Continental / Indian / Asian / Middle Eastern / Mexican
-    breakfast: 'r-smoothie-bowl',
-    lunch: 'r-soya-keema',
-    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
-    snack: ['r-tzatziki', 'r-black-bean-dip'],
-  },
-  {
-    // Wed — Continental / Salads / Mexican / Asian / Middle Eastern
-    breakfast: 'r-seed-yogurt-bowl',
-    lunch: 'r-sesame-slaw',
+    // Mon — Indian / Asian / Mexican / Middle Eastern / Continental
+    breakfast: 'r-besan-chilla',
+    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
     dinner: ['r-black-bean-soup', 'r-chicken-burrito-bowl'],
-    snack: ['r-edamame', 'r-labneh-zaatar'],
+    snack: ['r-labneh-zaatar', 'r-berry-protein-smoothie'],
   },
   {
-    // Thu — Continental / Indian / Asian / Italian / Mexican
-    breakfast: 'r-yoghurt-parfait',
-    lunch: 'r-soya-keema',
-    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
-    snack: ['r-white-bean-dip', 'r-black-bean-dip'],
+    // Tue — Continental / Middle Eastern / Italian / Salads / Asian
+    breakfast: 'r-pb-banana-toast',
+    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
+    dinner: ['r-minestrone', 'r-tuna-puttanesca'],
+    snack: ['r-sesame-slaw', 'r-edamame'],
   },
   {
-    // Fri — Continental / Salads / Asian / Italian
-    breakfast: 'r-overnight-oats',
-    lunch: 'r-sesame-slaw',
-    dinner: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
-    snack: ['r-edamame', 'r-bruschetta'],
+    // Wed — Indian / Asian / Middle Eastern / Continental / Italian
+    breakfast: 'r-besan-chilla',
+    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
+    dinner: ['r-stuffed-peppers', 'r-chicken-shawarma'],
+    snack: ['r-berry-protein-smoothie', 'r-white-bean-dip'],
   },
   {
-    // Sat — Continental / Indian / Asian / Middle Eastern
+    // Thu — Continental / Salads / Italian / Indian / Mexican
     breakfast: 'r-seed-yogurt-bowl',
-    lunch: 'r-moong-chaat',
-    dinner: ['r-tempeh-stirfry', 'r-teriyaki-salmon-donburi'],
-    snack: ['r-hummus-plate', 'r-dhokla'],
+    lunch: 'r-sesame-slaw',
+    dinner: ['r-mushroom-risotto', 'r-roast-chicken'],
+    snack: ['r-dhokla', 'r-black-bean-dip'],
   },
   {
-    // Sun — Continental / Indian / Asian / Middle Eastern / Italian
-    breakfast: 'r-yoghurt-parfait',
-    lunch: 'r-soya-keema',
-    dinner: ['r-tofu-bibimbap', 'r-teriyaki-salmon-donburi'],
-    snack: ['r-tzatziki', 'r-white-bean-dip'],
+    // Fri — Indian / Asian / Mexican / Middle Eastern
+    breakfast: 'r-besan-chilla',
+    lunch: ['r-miso-ramen-veg', 'r-beef-stirfry'],
+    dinner: ['r-black-bean-soup', 'r-chicken-burrito-bowl'],
+    snack: ['r-hummus-plate', 'r-tzatziki'],
+  },
+  {
+    // Sat — Continental / Salads / Middle Eastern / Indian
+    breakfast: 'r-seed-yogurt-bowl',
+    lunch: 'r-sesame-slaw',
+    dinner: ['r-mujadara', 'r-chicken-shawarma'],
+    snack: ['r-dhokla', 'r-berry-protein-smoothie'],
+  },
+  {
+    // Sun — Indian / Middle Eastern / Asian
+    breakfast: 'r-poha',
+    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
+    dinner: ['r-mapo-tofu-veg', 'r-beef-stirfry'],
+    snack: ['r-edamame', 'r-tzatziki'],
   },
 ]
 
 const WEEK2: DaySpec[] = [
   {
-    // Mon — Indian / Asian / Continental / Salads / Mexican
-    breakfast: 'r-dhokla',
-    lunch: ['r-tofu-pad-thai', 'r-tuna-poke'],
-    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
-    snack: ['r-sesame-slaw', 'r-black-bean-dip'],
+    // Mon — Asian / Middle Eastern / Indian / Salads / Continental
+    breakfast: 'r-congee',
+    lunch: ['r-fattoush-halloumi', 'r-harissa-prawns'],
+    dinner: ['r-dal-tadka', 'r-chicken-tikka-masala'],
+    snack: ['r-sesame-slaw', 'r-berry-protein-smoothie'],
   },
   {
-    // Tue — Asian / Italian / Salads / Continental
-    breakfast: 'r-congee',
-    lunch: ['r-caprese-panini', 'r-tuna-puttanesca'],
+    // Tue — Continental / Indian / Salads / Asian / Mexican
+    breakfast: 'r-overnight-oats',
+    lunch: 'r-soya-keema',
     dinner: ['r-chickpea-halloumi-salad', 'r-souvlaki-bowl'],
-    snack: ['r-edamame', 'r-berry-protein-smoothie'],
+    snack: ['r-edamame', 'r-black-bean-dip'],
   },
   {
-    // Wed — Indian / Middle Eastern / Salads / Mexican
+    // Wed — Indian / Middle Eastern / Asian / Salads
     breakfast: 'r-dhokla',
-    lunch: ['r-mujadara', 'r-chicken-shawarma'],
-    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
-    snack: ['r-sesame-slaw', 'r-black-bean-dip'],
+    lunch: ['r-fattoush-halloumi', 'r-harissa-prawns'],
+    dinner: ['r-tempeh-stirfry', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-sesame-slaw', 'r-moong-chaat'],
   },
   {
-    // Thu — Indian / Middle Eastern / Continental / Asian
-    breakfast: ['r-besan-chilla', 'r-veggie-scramble'],
-    lunch: ['r-lentil-soup', 'r-chicken-shawarma'],
-    dinner: ['r-halloumi-traybake', 'r-salmon-traybake'],
-    snack: ['r-edamame', 'r-berry-protein-smoothie'],
-  },
-  {
-    // Fri — Asian / Indian / Middle Eastern
+    // Thu — Asian / Italian / Indian / Continental / Mexican
     breakfast: 'r-congee',
-    lunch: ['r-tofu-pad-thai', 'r-tuna-poke'],
-    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
-    snack: ['r-hummus-plate', 'r-tzatziki'],
-  },
-  {
-    // Sat — Indian / Italian / Middle Eastern / Salads
-    breakfast: 'r-dhokla',
-    lunch: ['r-caprese-panini', 'r-tuna-puttanesca'],
-    dinner: ['r-lentil-soup', 'r-chicken-shawarma'],
-    snack: ['r-sesame-slaw', 'r-white-bean-dip'],
-  },
-  {
-    // Sun — Asian / Indian / Continental / Mexican
-    breakfast: 'r-congee',
-    lunch: ['r-palak-paneer', 'r-chicken-tikka-masala'],
-    dinner: ['r-tofu-pad-thai', 'r-tuna-poke'],
+    lunch: ['r-lentil-ragu', 'r-turkey-meatballs'],
+    dinner: 'r-soya-keema',
     snack: ['r-berry-protein-smoothie', 'r-black-bean-dip'],
+  },
+  {
+    // Fri — Continental / Middle Eastern / Asian / Salads
+    breakfast: 'r-yoghurt-parfait',
+    lunch: ['r-fattoush-halloumi', 'r-harissa-prawns'],
+    dinner: ['r-veg-fried-rice', 'r-teriyaki-salmon-donburi'],
+    snack: ['r-sesame-slaw', 'r-tzatziki'],
+  },
+  {
+    // Sat — Indian / Asian / Mexican
+    breakfast: 'r-dhokla',
+    lunch: ['r-tempeh-stirfry', 'r-teriyaki-salmon-donburi'],
+    dinner: ['r-palak-paneer', 'r-chicken-tikka-masala'],
+    snack: ['r-edamame', 'r-black-bean-dip'],
+  },
+  {
+    // Sun — Asian / Italian / Indian / Continental
+    breakfast: 'r-congee',
+    lunch: ['r-lentil-ragu', 'r-turkey-meatballs'],
+    dinner: 'r-soya-keema',
+    snack: ['r-berry-protein-smoothie', 'r-white-bean-dip'],
   },
 ]
 
@@ -184,6 +184,8 @@ function seedPlan(anchor: string, profiles: Profile[]): PlanEntry[] {
   const entries: PlanEntry[] = []
   const push = (date: string, slot: MealSlot, pick: Pick) => {
     profiles.forEach((profile, i) => {
+      // a slot a staple stands in for is not planned into at all
+      if (profile.staplesReplace?.includes(slot)) return
       const recipeId = Array.isArray(pick) ? pick[Math.min(i, pick.length - 1)] : pick
       entries.push({ id: uid(), profileId: profile.id, date, slot, recipeId, servings: 1, eaten: false })
     })

@@ -13,6 +13,7 @@
  *            cuisine more than a quarter of Ruchi's meals.
  */
 import fs from 'node:fs'
+const T0 = Date.now()
 
 const src = fs.readFileSync('src/data/recipes.ts', 'utf8')
 const R = []
@@ -61,7 +62,7 @@ const SWAP = {
   'r-paneer-bhurji': 'r-menemen', 'r-ful-medames': 'r-menemen',
   'r-fattoush-halloumi': 'r-harissa-prawns',
 }
-const GOAL = { rk: 1850, rp: 110, dk: 2250, dp: 140, fib: 30 }
+const GOAL = { rk: 1850, rp: 110, dk: 1950, dp: 140, fib: 30 }
 
 /**
  * Standing items already on a plate every day, which the searched meals have to
@@ -74,6 +75,13 @@ const GOAL = { rk: 1850, rp: 110, dk: 2250, dp: 140, fib: 30 }
 const STAPLE = { dj: { k: 358, p: 31.5, fib: 0 } }
 
 /**
+ * Dj's eggs are his breakfast rather than an extra, so his day is the staple
+ * plus lunch, dinner and the two snacks — the breakfast the search picks is
+ * Ruchi's alone. Keep in step with `staplesReplace` in src/lib/profiles.ts.
+ */
+const DJ_SKIPS_BREAKFAST = true
+
+/**
  * Dishes the household actually eats, which the plan must not drop just
  * because a leaner option scores better. The seed yoghurt bowl is their usual
  * breakfast; nuts and seeds are calorie-dense for the protein they carry, so a
@@ -84,6 +92,8 @@ const STAPLE = { dj: { k: 358, p: 31.5, fib: 0 } }
 const PINNED = [['r-seed-yogurt-bowl', 2]]
 const PINNED_IDS = new Set(PINNED.map(([id]) => id))
 const SLACK = 6
+
+const swap = (x) => (SWAP[x.id] && get(SWAP[x.id]) ? get(SWAP[x.id]) : x)
 
 // ── enumerate every acceptable day ────────────────────────────────────────
 const B = by('breakfast'), L = by('lunch'), D = by('dinner'), S = by('snack')
@@ -98,20 +108,25 @@ for (const b of B) for (const l of L) for (const dn of D)
     const rp = picks.reduce((a, x) => a + x.p, 0); if (rp < GOAL.rp - slack) continue
     const rf = picks.reduce((a, x) => a + x.fib, 0); if (rf < GOAL.fib) continue
     if (new Set(picks.map((x) => x.cu)).size < 3) continue
-    const dj = [b, l, dn].map((x) => (SWAP[x.id] && get(SWAP[x.id]) ? get(SWAP[x.id]) : x))
-    const dAll = [...dj, S[i], S[j]]
-    // several veg dishes share a meaty sibling — never serve Dj the same twice
-    if (new Set(dAll.map((x) => x.id)).size < 5) continue
+    const dj = DJ_SKIPS_BREAKFAST ? [null, swap(l), swap(dn)] : [b, l, dn].map(swap)
+    const dAll = [...dj.filter(Boolean), S[i], S[j]]
+    // several veg dishes share a meaty sibling — never serve Dj the same twice.
+    // Count against what is actually on his plate: with the eggs standing in for
+    // breakfast that is four things, not five.
+    if (new Set(dAll.map((x) => x.id)).size < dAll.length) continue
     const dk = dAll.reduce((a, x) => a + x.k, 0) + STAPLE.dj.k
     const dp = dAll.reduce((a, x) => a + x.p, 0) + STAPLE.dj.p
     // Dj's fibre was never checked — only Ruchi's — which let a day through at
     // 26 g against a 30 g goal. His swaps replace pulses with meat, so his
     // figure is the lower of the two and the one that needs the guard.
     const df = dAll.reduce((a, x) => a + x.fib, 0) + STAPLE.dj.fib
-    if (dk > GOAL.dk || dk < GOAL.dk - 300 || dp < GOAL.dp - slack || df < GOAL.fib) continue
+    // No slack for Dj. The allowance exists because the pinned yoghurt bowl is
+    // calorie-dense for its protein — and that is Ruchi's breakfast, which he no
+    // longer shares, so his day is not the one making the trade.
+    if (dk > GOAL.dk || dk < GOAL.dk - 300 || dp < GOAL.dp || df < GOAL.fib) continue
     days.push({ picks, dj, rk, rp, rf, dk, dp, df })
   }
-console.error(`acceptable days: ${days.length}`)
+console.error(`acceptable days: ${days.length} (${Date.now()-T0}ms)`)
 
 // ── choose seven of them ──────────────────────────────────────────────────
 const CUISINES = [...new Set(R.map((r) => r.cu))]
@@ -122,7 +137,12 @@ for (const d of days) {
   for (const x of d.picks) d.hist[CI[x.cu]]++
   d.ids = d.picks.map((x) => x.id)
   // the three meals, on both plates — Dj's swap counts as a repeat too
-  d.mains = [...new Set([...d.picks.slice(0, 3).map((x) => x.id), ...d.dj.map((x) => x.id)])]
+  d.mains = [
+    ...new Set([
+      ...d.picks.slice(0, 3).map((x) => x.id),
+      ...d.dj.filter(Boolean).map((x) => x.id),
+    ]),
+  ]
   d.key = d.ids.slice().sort().join('|')
 }
 /** Fisher-Yates, so a level's candidates are tried in a different order each run. */
@@ -170,9 +190,9 @@ const MINC = 3, MAXC = 8, MAXUSE = 3
  */
 
 const ALL_DAYS = days
-const SAMPLE = 1400
+const SAMPLE = 1500
 
-function pickFortnight(budget = 20000) {
+function pickFortnight(budget = 150000) {
   // Sample the pool per attempt. Filtering all 2787 acceptable days at every
   // node is the whole cost of the search; 700 keeps plenty of variety, and a
   // fresh sample each restart explores the rest.
@@ -251,7 +271,7 @@ function pickFortnight(budget = 20000) {
     const cover = (c) => (short.size ? c.hist.reduce((n, v, i) => n + (v && short.has(i) ? 1 : 0), 0) : 0)
     const order = shuffle(feasible)
       .sort((a, b) => cover(b) - cover(a))
-      .slice(0, 6)
+      .slice(0, 8)
     for (const cand of order) {
       if (spent++ > budget) return null
 
@@ -278,7 +298,7 @@ function pickFortnight(budget = 20000) {
 }
 
 let fortnight = null
-for (let i = 0; i < 150 && !fortnight; i++) fortnight = pickFortnight()
+for (let i = 0; i < 40 && !fortnight; i++) fortnight = pickFortnight()
 if (!fortnight) {
   console.error(`could not plan a fortnight with no repeated meal`)
   process.exit(1)
@@ -313,7 +333,9 @@ weeks.forEach((week, w) => {
     const [b, l, dn, s1, s2] = d.picks
     const cu = [...new Set(d.picks.map((x) => x.cu))].join(' / ')
     console.log(`  {\n    // ${names[i]} — ${cu}`)
-    console.log(`    breakfast: ${pairOf(b, d.dj[0])},`)
+    // Dj eats his eggs; the breakfast the search picked is Ruchi's, and
+    // seedPlan skips his slot entirely
+    console.log(`    breakfast: ${q(b.id)},`)
     console.log(`    lunch: ${pairOf(l, d.dj[1])},`)
     console.log(`    dinner: ${pairOf(dn, d.dj[2])},`)
     console.log(`    snack: [${q(s1.id)}, ${q(s2.id)}],`)

@@ -104,6 +104,12 @@ export interface Profile {
    * every morning is the app doing its job badly.
    */
   staples?: string[]
+  /**
+   * Slots the staples stand in for, so nothing is planned into them. Dj's five
+   * eggs are his breakfast rather than something on top of it, so he gets no
+   * planned breakfast dish at all — Ruchi still gets hers.
+   */
+  staplesReplace?: MealSlot[]
 }
 
 export interface PlanEntry {

@@ -23,10 +23,12 @@ const names=[...'Mon Tue Wed Thu Fri Sat Sun'.split(' ').map(d=>'1'+d), ...'Mon 
 const pick=(raw,i)=>{raw=raw.trim().replace(/,$/,'')
   if(raw.startsWith('[')){const p=raw.slice(1,-1).split(',').map(x=>x.trim().replace(/'/g,''));return p[Math.min(i,p.length-1)]}
   return raw.replace(/'/g,'')}
-const goals=[{n:'Ruchi',k:1850,p:110,fib:30},{n:'Dj',k:2250,p:140,fib:30}]
-// standing items land on every day outside the searched plan; keep in step
-// with `staples` in src/lib/profiles.ts
+const goals=[{n:'Ruchi',k:1850,p:110,fib:30},{n:'Dj',k:1950,p:140,fib:30}]
+// Standing items land on every day outside the searched plan, and Dj's eggs
+// stand in for his breakfast rather than adding to it. Keep in step with
+// `staples` and `staplesReplace` in src/lib/profiles.ts.
 const STAPLE=[null,'r-boiled-eggs']
+const SKIPS_BREAKFAST=[false,true]
 // Days built on a pinned dish trade a few grams of protein for the food they
 // actually eat; scripts/plan-week.mjs allows the same slack when it searches.
 const PINNED=['r-seed-yogurt-bowl'], SLACK=6
@@ -37,7 +39,8 @@ for (const i of [0,1]) {
   let T=[0,0,0,0,0]
   days.forEach((d,di)=>{
     const body=d[0]
-    const ids=[pick(/breakfast: (.*?),?\n/.exec(body)[1],i), pick(/lunch: (.*?),?\n/.exec(body)[1],i),
+    const ids=[...(SKIPS_BREAKFAST[i]?[]:[pick(/breakfast: (.*?),?\n/.exec(body)[1],i)]),
+      pick(/lunch: (.*?),?\n/.exec(body)[1],i),
       pick(/dinner: (.*?),?\n/.exec(body)[1],i), ...d[1].split(',').map(x=>x.trim().replace(/'/g,'')).filter(Boolean)]
     const st=STAPLE[i]&&meta[STAPLE[i]]
     let k=st?st.k:0,p=st?st.p:0,c=st?st.c:0,f=st?st.f:0,fib=st?st.fib:0

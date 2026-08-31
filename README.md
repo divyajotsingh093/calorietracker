@@ -41,10 +41,11 @@ Ruchi is vegetarian and does not eat egg — except beaten into a batter, so
 pancakes are fine and an omelette is not. That is a per-person flag rather than a
 property of the diet, since `vegetarian` alone cannot say it.
 
-Dj eats five boiled eggs every morning. They are a **staple**: laid onto every
-date as it comes into view, never logged by hand, and budgeted for by the planner,
-which leaves 358 kcal and 31.5 g of protein of his day free for them. Remove one
-and it stays removed — a date is stapled once.
+Dj eats five boiled eggs every morning, and they **are** his breakfast rather than
+something on top of it. They are a **staple**: laid onto every date as it comes
+into view, never logged by hand, and nothing else is planned into his breakfast
+slot — Ruchi still gets hers. The search budgets his day as the eggs plus lunch,
+dinner and two snacks. Remove one and it stays removed; a date is stapled once.
 
 The app ships with two profiles:
 

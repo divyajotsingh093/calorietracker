@@ -21,14 +21,15 @@ export const DEFAULT_PROFILES: Profile[] = [
     emoji: '🔥',
     accent: 'from-sky-400 to-indigo-400',
     diet: 'omnivore',
-    // 1950 for meals plus the 358 kcal of eggs he eats every morning
-    calorieGoal: 2250,
+    calorieGoal: 1950,
     proteinGoal: 140,
     carbGoal: 200,
     fatGoal: 65,
     fibreGoal: 30,
-    // five boiled eggs, every day, without being asked about them
+    // five boiled eggs every morning — they are his breakfast, not an extra,
+    // so nothing else is planned into that slot
     staples: ['r-boiled-eggs'],
+    staplesReplace: ['breakfast'],
   },
 ]
 
