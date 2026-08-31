@@ -35,6 +35,7 @@ import { todayISO } from '@/lib/date'
 import { dayTotals } from '@/lib/nutrition'
 import { averages, daySeries } from '@/lib/series'
 import { dietClash } from '@/lib/profiles'
+import { quota } from '@/lib/openrouter'
 import { useServerKey } from '@/lib/serverKey'
 import { useListener, useVoice } from '@/lib/speech'
 import { ACCENTS, type Accent, type ThemeMode } from '@/lib/theme'
@@ -73,6 +74,8 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
   const turns = state.chat
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
+  // requests left on the key, read from the last response's headers
+  const [left, setLeft] = useState<number | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -356,10 +359,13 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
         const convo: WireMessage[] = [...wire]
         let reply = await ask(convo)
 
-        // Keep going while the model asks for tools. One round was not enough:
-        // a model that plans a dish, sees it worked and then wants to tick it
-        // off would have had its second call dropped on the floor.
-        for (let round = 0; round < 4 && reply.calls.length; round++) {
+        // Keep going while the model asks for tools, but not far. One round was
+        // not enough — a model that plans a dish, sees it worked and then wants
+        // to tick it off had its second call dropped. Four rounds was too many
+        // for a different reason: a free OpenRouter key allows 50 requests a
+        // day, and five per question is ten questions before the app stops
+        // working. Two rounds covers every sequence these tools actually need.
+        for (let round = 0; round < 2 && reply.calls.length; round++) {
           const results = reply.calls.map((c) => ({ call: c, record: runTool(c) }))
           done.push(...results.map((r) => r.record))
           convo.push(reply.echo as WireMessage, ...resultMessages(provider, results))
@@ -381,6 +387,7 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
           error: true,
         })
       } finally {
+        setLeft(quota()?.remaining ?? null)
         setBusy(false)
       }
     },
@@ -468,6 +475,7 @@ export function Assistant({ onOpenSettings, onNavigate, theme }: AssistantProps)
               <span className="hud-label truncate">
                 {status}
                 {engine ? ` · ${engine}` : ''}
+                {left != null ? ` · ${left} left today` : ''}
               </span>
             </div>
           </div>

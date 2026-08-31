@@ -186,6 +186,16 @@ Requires Node 20+.
   in the source or in a `VITE_` variable ends up inside the JavaScript bundle
   every visitor downloads.
 
+  **Free keys are the usual cause of "OpenRouter issues".** A free OpenRouter
+  account allows 50 requests a day and 20 a minute, and a request that fails
+  still spends one of them. Adding $10 of credit to the account raises the daily
+  allowance to 1,000. The app reports a spent allowance as exactly that, with the
+  reset time, and shows the requests remaining in NOVA's status line; **Test
+  connection** in Settings makes one real request and names whatever comes back.
+  A question that changes something costs up to three requests (the answer, the
+  tool call, the confirmation), so the tool loop is capped at two rounds rather
+  than spending the day's allowance on one conversation.
+
   The endpoint only accepts the models listed in `lib/models.ts`, caps
   `max_tokens`, and forwards nothing but the fields the app sends, since an open
   passthrough lets a caller bill the most expensive model on the platform to
@@ -230,6 +240,7 @@ src/
   lib/assistant.ts      NOVA's context, tools, providers and on-device fallback
   lib/speech.ts         microphone dictation and spoken replies
   lib/serverKey.ts      one-shot probe for a deployment key, and the access code
+  lib/openrouter.ts     every OpenRouter request: quota headers, errors, retries
   lib/nutrition.ts      per-profile macro maths and daily totals
   lib/theme.ts          theme + accent tokens, persistence, no-flash boot
   index.css             the design system: type, tokens, both themes, motion

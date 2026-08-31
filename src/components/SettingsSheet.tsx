@@ -7,6 +7,7 @@ import { dietLabel } from '@/lib/profiles'
 import { useStore } from '@/lib/store'
 import { DEFAULT_CHAT_MODEL } from '@/lib/assistant'
 import { CHAT_MODELS, VISION_MODELS, isTextOnly, type ModelOption } from '@/lib/models'
+import { testConnection } from '@/lib/openrouter'
 import { readAccessCode, useServerKey, writeAccessCode } from '@/lib/serverKey'
 import { DEFAULT_OPENROUTER_MODEL } from '@/lib/vision'
 import type { VisionProvider } from '@/types'
@@ -49,6 +50,7 @@ export function SettingsSheet({
   const { state, setSettings, updateProfile, resetAll, importState } = useStore()
   const server = useServerKey()
   const [code, setCode] = useState(readAccessCode)
+  const [test, setTest] = useState('')
   const { settings } = state
   // What is actually in use. Until someone picks, a deployment carrying its own
   // key is the provider, so the chips must show that rather than the seeded
@@ -242,6 +244,38 @@ export function SettingsSheet({
                 value={settings.openrouterChatModel}
                 onChange={(openrouterChatModel) => setSettings({ openrouterChatModel })}
               />
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="soft"
+                  onClick={async () => {
+                    setTest('Testing…')
+                    const r = await testConnection(
+                      settings.openrouterKey,
+                      settings.openrouterChatModel.trim() || DEFAULT_CHAT_MODEL,
+                    )
+                    setTest(`${r.ok ? '✓' : '✕'} ${r.detail}`)
+                  }}
+                >
+                  Test connection
+                </Button>
+                {test && (
+                  <span
+                    className={cx(
+                      'text-[0.8125rem]',
+                      test.startsWith('✕') ? 'text-danger' : 'text-soft',
+                    )}
+                  >
+                    {test}
+                  </span>
+                )}
+              </div>
+              <p className="text-[0.8125rem] text-muted">
+                Free OpenRouter keys allow 50 requests a day and 20 a minute, and a
+                failed request still spends one. Adding $10 of credit to the account
+                raises it to 1,000 a day.
+              </p>
             </>
           )}
         </div>

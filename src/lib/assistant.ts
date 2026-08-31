@@ -2,7 +2,7 @@ import { AISLE_ORDER } from '@/lib/grocery'
 import { dayTotals, macroSplit } from '@/lib/nutrition'
 import { longDate, todayISO } from '@/lib/date'
 import { suitsDiet } from '@/lib/profiles'
-import { PROXY_URL, readAccessCode } from '@/lib/serverKey'
+import { OpenRouterError, callOpenRouter } from '@/lib/openrouter'
 import type { AppState, MealSlot, Memory, Profile, Recipe, Settings } from '@/types'
 
 export type Role = 'user' | 'assistant'
@@ -520,39 +520,50 @@ export async function askOpenRouter(
   apiKey: string,
   model: string,
 ): Promise<Reply> {
-  const viaProxy = !apiKey.trim()
-  const res = await fetch(viaProxy ? PROXY_URL : 'https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: viaProxy
-      ? { 'content-type': 'application/json', 'x-nova-access': readAccessCode() }
-      : {
-          'content-type': 'application/json',
-          authorization: `Bearer ${apiKey}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Nourish meal tracker',
-        },
-    body: JSON.stringify({
-      model: model || DEFAULT_CHAT_MODEL,
-      max_tokens: MAX_TOKENS,
-      // Keep the thinking short so the budget goes on the answer. Every model
-      // here can reason; none of them needs to for "what is left today?".
-      reasoning: { effort: 'low' },
-      messages: [{ role: 'system', content: system }, ...messages],
-      tools: TOOLS.map((t) => ({
-        type: 'function',
-        function: { name: t.name, description: t.description, parameters: t.input_schema },
-      })),
-    }),
-  })
-  const json = (await res.json()) as {
-    choices?: { message?: OpenAIMessage; finish_reason?: string }[]
-    error?: { message?: string }
-  }
-  if (!res.ok) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  // OpenRouter can answer 200 with an error body when the upstream model fails.
-  if (json.error?.message) throw new Error(json.error.message)
+  const send = (withTools: boolean) =>
+    callOpenRouter({
+      apiKey,
+      body: {
+        model: model || DEFAULT_CHAT_MODEL,
+        max_tokens: MAX_TOKENS,
+        // Keep the thinking short so the budget goes on the answer. Every model
+        // here can reason; none of them needs to for "what is left today?".
+        reasoning: { effort: 'low' },
+        messages: [{ role: 'system', content: system }, ...messages],
+        ...(withTools
+          ? {
+              tools: TOOLS.map((t) => ({
+                type: 'function',
+                function: {
+                  name: t.name,
+                  description: t.description,
+                  parameters: t.input_schema,
+                },
+              })),
+            }
+          : {}),
+      },
+    })
 
-  const choice = json.choices?.[0]
+  let json: Awaited<ReturnType<typeof send>>
+  try {
+    json = await send(true)
+  } catch (e) {
+    // Some endpoints serve a model but not its tool calling. Answering without
+    // actions is much better than not answering at all, so drop the tools and
+    // ask again — NOVA can still read the plan, it just cannot change it.
+    if (e instanceof OpenRouterError && e.unsupported && /tool/i.test(e.message)) {
+      json = await send(false)
+    } else {
+      throw e
+    }
+  }
+
+  const parsed = json as {
+    choices?: { message?: OpenAIMessage; finish_reason?: string }[]
+  }
+
+  const choice = parsed.choices?.[0]
   const msg = choice?.message ?? {}
   const calls = (msg.tool_calls ?? []).map((c) => {
     let input: Record<string, unknown> = {}

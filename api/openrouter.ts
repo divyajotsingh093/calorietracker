@@ -110,11 +110,17 @@ export default async function handler(req: Request): Promise<Response> {
     body: JSON.stringify(forwarded),
   })
 
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: {
-      'content-type': upstream.headers.get('content-type') ?? 'application/json',
-      'cache-control': 'no-store',
-    },
+  // Pass the rate-limit headers through. Free keys allow 50 requests a day, and
+  // without these the browser cannot tell "out of allowance until midnight"
+  // from "something broke" — which are very different things to a reader.
+  const out = new Headers({
+    'content-type': upstream.headers.get('content-type') ?? 'application/json',
+    'cache-control': 'no-store',
   })
+  for (const h of ['x-ratelimit-limit', 'x-ratelimit-remaining', 'x-ratelimit-reset']) {
+    const v = upstream.headers.get(h)
+    if (v) out.set(h, v)
+  }
+
+  return new Response(upstream.body, { status: upstream.status, headers: out })
 }

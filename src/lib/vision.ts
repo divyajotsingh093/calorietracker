@@ -1,5 +1,5 @@
 import { FOOD_REF, PORTION_SCALE, type FoodRef, type PortionSize } from '@/data/foods'
-import { PROXY_URL, readAccessCode } from '@/lib/serverKey'
+import { callOpenRouter } from '@/lib/openrouter'
 import type { Settings } from '@/types'
 
 export interface AnalysisItem {
@@ -284,20 +284,9 @@ export async function analyzeWithOpenRouter(
   model: string,
   hint: string,
 ): Promise<Analysis> {
-  // Same rule as the assistant: a personal key goes straight to OpenRouter, and
-  // without one the request goes through this deployment's server-side proxy.
-  const viaProxy = !apiKey.trim()
-  const res = await fetch(viaProxy ? PROXY_URL : 'https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: viaProxy
-      ? { 'content-type': 'application/json', 'x-nova-access': readAccessCode() }
-      : {
-          'content-type': 'application/json',
-          authorization: `Bearer ${apiKey}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Nourish meal tracker',
-        },
-    body: JSON.stringify({
+  const json = (await callOpenRouter({
+    apiKey,
+    body: {
       model: model || DEFAULT_OPENROUTER_MODEL,
       max_tokens: 1024,
       response_format: { type: 'json_object' },
@@ -311,13 +300,8 @@ export async function analyzeWithOpenRouter(
           ],
         },
       ],
-    }),
-  })
-
-  const json = (await res.json()) as OpenAIStyleResponse
-  if (!res.ok) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  // OpenRouter can answer 200 with an error body when the upstream model fails.
-  if (json.error?.message) throw new Error(json.error.message)
+    },
+  })) as OpenAIStyleResponse
 
   const text = json.choices?.[0]?.message?.content ?? ''
   if (!text) throw new Error('The model returned an empty reply. Try another model.')
