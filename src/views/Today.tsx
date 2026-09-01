@@ -13,7 +13,7 @@ import {
   IconTrash,
 } from '@/components/icons'
 import { Button, Card, Tag, cx, type as t } from '@/components/ui'
-import { addDays, longDate, todayISO } from '@/lib/date'
+import { addDays, dayName, dayNum, longDate, startOfWeek, toISO, fromISO, todayISO } from '@/lib/date'
 import { dayTotals, entryMacros } from '@/lib/nutrition'
 import { SLOTS, SLOT_META, tintStyle } from '@/lib/slots'
 import { useStore } from '@/lib/store'
@@ -71,42 +71,20 @@ export function Today({ onSnap }: { onSnap: () => void }) {
     <div className="animate-rise space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className={t.displayXl}>
-            {isToday ? 'Today' : longDate(date)}
-          </h1>
-          <p className="mt-0.5 text-[0.8125rem] text-muted">
-            {isToday ? longDate(date) : 'Browsing another day'}
-          </p>
+          <h1 className={t.displayXl}>{isToday ? 'Today' : dayName(date)}</h1>
+          <p className="m3-body-md mt-0.5 text-muted">{longDate(date)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ScopeSwitcher profiles={profiles} scope={state.scope} onChange={setScope} />
-          <div className="glass flex items-center gap-1 rounded-full p-1">
-            <button
-              aria-label="Previous day"
-              onClick={() => setDate(addDays(date, -1))}
-              className="grid size-9 place-items-center rounded-full text-muted transition hover:bg-fill-hover hover:text-ink cursor-pointer"
-            >
-              <IconChevronLeft width={18} height={18} />
-            </button>
-            <button
-              onClick={() => setDate(todayISO())}
-              className={cx(
-                'rounded-full px-3.5 py-1.5 text-[13px] font-medium transition cursor-pointer',
-                isToday ? 'text-faint' : 'bg-invert text-on-accent',
-              )}
-            >
-              Today
-            </button>
-            <button
-              aria-label="Next day"
-              onClick={() => setDate(addDays(date, 1))}
-              className="grid size-9 place-items-center rounded-full text-muted transition hover:bg-fill-hover hover:text-ink cursor-pointer"
-            >
-              <IconChevronRight width={18} height={18} />
-            </button>
-          </div>
+          {!isToday && (
+            <Button size="sm" variant="soft" onClick={() => setDate(todayISO())}>
+              Back to today
+            </Button>
+          )}
         </div>
       </div>
+
+      <DateStrip date={date} onPick={setDate} />
 
       {/* One summary per person in view */}
       <div className={cx('stagger grid gap-4', multi && 'lg:grid-cols-2')}>
@@ -429,45 +407,102 @@ function DaySummary({
         </span>
       </div>
 
-      <div
-        className={cx(
-          'flex flex-col items-center gap-5',
-          compact ? 'sm:flex-row' : 'lg:flex-row lg:gap-8',
-        )}
-      >
+      {/* The ring used to run to 180px with the macros stacked beneath it, which
+          put the day's meals a full screen down on a phone. It carries one
+          number; a compact row of the same information leaves the food visible. */}
+      <div className="flex items-center gap-4">
         <CalorieRing
           value={eaten.calories}
           goal={profile.calorieGoal}
-          size={compact ? 150 : 180}
-          stroke={compact ? 13 : 16}
+          size={compact ? 88 : 104}
+          stroke={compact ? 9 : 10}
         />
-        <div className="w-full flex-1 space-y-3">
+        {/* One column until there is room for two: at 390px a two-up grid gives
+            each cell ~120px, and "PROTEIN 0/110g" does not fit in that. */}
+        <div className="grid min-w-0 flex-1 grid-cols-1 gap-x-5 gap-y-2 min-[560px]:grid-cols-2">
           <MacroBar
             label="Protein"
             value={eaten.protein}
             goal={profile.proteinGoal}
             tone="protein"
           />
-          <MacroBar
-            label="Carbs"
-            value={eaten.carbs}
-            goal={profile.carbGoal}
-            tone="carbs"
-          />
+          <MacroBar label="Carbs" value={eaten.carbs} goal={profile.carbGoal} tone="carbs" />
           <MacroBar label="Fat" value={eaten.fat} goal={profile.fatGoal} tone="fat" />
           <MacroBar label="Fibre" value={eaten.fibre} goal={profile.fibreGoal} tone="fibre" />
-          <div className="pt-1">
-            <div className={cx('mb-1.5 text-faint', t.micro)}>Calorie split</div>
-            <SplitBar protein={eaten.protein * 4} carbs={eaten.carbs * 4} fat={eaten.fat * 9} />
-          </div>
         </div>
       </div>
 
+      {/* An empty split bar says nothing; it only earns its row once there is
+          something to split. */}
+      {eaten.calories > 0 && (
+        <div className="mt-3.5">
+          <div className={cx('mb-1.5 text-faint', t.micro)}>Calorie split</div>
+          <SplitBar protein={eaten.protein * 4} carbs={eaten.carbs * 4} fat={eaten.fat * 9} />
+        </div>
+      )}
+
       {eaten.calories === 0 && (
-        <p className="mt-4 rounded-2xl bg-fill px-3.5 py-2.5 text-[0.8125rem] text-faint">
+        <p className="m3-body-sm mt-3.5 rounded-md bg-panel-2 px-3.5 py-2.5 text-faint">
           🍽️ Nothing logged yet — tick a meal off below, or snap a photo.
         </p>
       )}
     </Card>
+  )
+}
+
+/**
+ * The week around the day being viewed, as seven tappable dates.
+ *
+ * Chevrons alone never said "this is a daily view" — the date was a line of
+ * text you had to read. A strip shows where you are in the week, which days
+ * are behind you, and moves a day with one tap.
+ */
+function DateStrip({ date, onPick }: { date: string; onPick: (iso: string) => void }) {
+  const today = todayISO()
+  const monday = toISO(startOfWeek(fromISO(date)))
+  const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
+
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        aria-label="Previous week"
+        onClick={() => onPick(addDays(date, -7))}
+        className="m3-state press grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-muted"
+      >
+        <IconChevronLeft width={18} height={18} />
+      </button>
+
+      <div className="flex flex-1 gap-0.5">
+        {week.map((iso) => {
+          const on = iso === date
+          const now = iso === today
+          return (
+            <button
+              key={iso}
+              onClick={() => onPick(iso)}
+              aria-current={on ? 'date' : undefined}
+              aria-label={longDate(iso)}
+              className={cx(
+                'm3-state press flex flex-1 cursor-pointer flex-col items-center gap-1 rounded-full py-1.5',
+                on ? 'bg-accent text-on-accent' : now ? 'text-accent-ink' : 'text-muted',
+              )}
+            >
+              <span className="m3-label-sm uppercase opacity-75">{dayName(iso)}</span>
+              <span className={cx('m3-title-md tabular-nums', (on || now) && 'font-semibold')}>
+                {dayNum(iso)}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      <button
+        aria-label="Next week"
+        onClick={() => onPick(addDays(date, 7))}
+        className="m3-state press grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-muted"
+      >
+        <IconChevronRight width={18} height={18} />
+      </button>
+    </div>
   )
 }

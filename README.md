@@ -9,6 +9,15 @@ Everything lives in the browser — no account, no server, no data leaving the d
 
 ## Design
 
+The app sits on **[Material Design 3](https://m3.material.io)** rather than a
+palette invented here. What M3 contributes is not a look but decisions already
+made: a type scale with fixed sizes, line heights and tracking; a five-step
+shape scale (4 / 8 / 12 / 16 / 24 dp); tonal surface containers instead of ad-hoc
+greys; elevation as a key-plus-ambient shadow pair; and state layers, where a
+hover or press is the element's own colour at a defined opacity rather than a
+second colour per state. Hues stay ours — M3 is a system for generating a
+palette, not a requirement to use Google's.
+
 **Type.** Two self-hosted variable faces, no CDN and no FOUT. *Fraunces* — a serif
 with optical-size, SOFT and WONK axes — carries the display sizes; its optical
 axis keeps 40px headings tight and 18px ones readable without manual tracking.
@@ -79,8 +88,11 @@ planned together.
 
 ## What it does
 
-**Today** — a calorie ring per person against their own goal, macro bars, and the
-day's four meal slots. In *Both* mode each meal row has one tick per person, so
+**Today** — a proper daily view: a tappable week strip showing where you are,
+arrows to move a week at a time, a compact summary per person and the day's four
+meal slots. The plan **builds itself forward** — the fortnight rolls to the
+current Monday and any date without meals gets its template day, so "this week"
+is always planned rather than frozen on whenever the app was first opened. In *Both* mode each meal row has one tick per person, so
 you can mark Dj's dinner eaten without touching Ruchi's.
 
 **Two-week plan** — 14 days × 4 slots. On desktop it's a seven-column week grid:

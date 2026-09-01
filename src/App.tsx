@@ -35,7 +35,7 @@ const TABS: { id: TabId; label: string; icon: typeof IconFlame }[] = [
 ]
 
 function Shell() {
-  const { state, recipeMap, scoped, days, syncStaples } = useStore()
+  const { state, recipeMap, scoped, days, syncStaples, ensurePlan } = useStore()
   const theme = useTheme()
   const [tab, setTab] = useState<TabId>('today')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -54,8 +54,9 @@ function Shell() {
   // Standing items — Dj's five eggs — land on every date that comes into view,
   // so a constant never has to be logged.
   useEffect(() => {
+    ensurePlan(days)
     syncStaples(days)
-  }, [days, syncStaples])
+  }, [days, ensurePlan, syncStaples])
 
   // Number keys jump between tabs.
   useEffect(() => {

@@ -13,17 +13,18 @@ export function cx(...parts: (string | false | null | undefined)[]): string {
 }
 
 /* ─────────────────────────── Type scale ───────────────────────────
-   Six steps, each with its own tracking. Display sizes tighten as they
-   grow; the micro step is the only one that gets letterspaced out.      */
+   Material 3's scale, mapped onto the names the app already used, so a
+   view asks for a role and gets size, line height, tracking and weight
+   together. Sizes and weights are M3's; the faces are ours.            */
 
 export const type = {
-  displayXl: 'font-display text-[2rem] sm:text-[2.5rem] font-semibold leading-[1.05]',
-  displayL: 'font-display text-[1.5rem] sm:text-[1.75rem] font-semibold leading-[1.12]',
-  displayM: 'font-display text-[1.125rem] font-semibold leading-[1.2]',
-  title: 'text-[0.9375rem] font-semibold leading-[1.35]',
-  body: 'text-[0.875rem] leading-[1.55]',
-  small: 'text-[0.8125rem] leading-[1.45]',
-  micro: 'text-[0.6875rem] font-medium uppercase tracking-[0.09em]',
+  displayXl: 'm3-headline-md sm:m3-headline-lg font-semibold',
+  displayL: 'm3-title-lg sm:m3-headline-sm font-semibold',
+  displayM: 'm3-title-lg font-semibold',
+  title: 'm3-title-md',
+  body: 'm3-body-md',
+  small: 'm3-body-sm',
+  micro: 'm3-label-md uppercase tracking-[0.09em]',
 } as const
 
 export function Card({
@@ -35,7 +36,8 @@ export function Card({
     <div
       {...rest}
       className={cx(
-        'glass min-w-0 rounded-[1.5rem] transition-[background-color,border-color,box-shadow] duration-300',
+        /* M3 extra-large corner; cards are the one place the biggest step earns it */
+        'glass min-w-0 rounded-xl transition-[background-color,border-color,box-shadow] duration-300',
         className,
       )}
     >
@@ -50,22 +52,23 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 export function Button({ variant = 'soft', size = 'md', className, ...rest }: ButtonProps) {
+  // M3 buttons: fully rounded, label-large text, and a state layer rather than
+  // a different background colour per state.
   const variants = {
-    primary:
-      'bg-gradient-to-br from-accent to-accent-2 text-on-accent font-semibold shadow-e2 hover:brightness-[1.07] hover:shadow-e3',
-    soft: 'bg-panel border border-line text-soft shadow-e1 hover:bg-panel-2 hover:text-ink hover:shadow-e2',
-    ghost: 'text-muted hover:bg-fill hover:text-ink',
-    danger: 'bg-danger-wash text-danger border border-danger/25 hover:bg-danger hover:text-on-accent',
+    primary: 'bg-accent text-on-accent shadow-e1 hover:shadow-e2',
+    soft: 'bg-panel-2 text-ink',
+    ghost: 'text-accent-ink',
+    danger: 'bg-danger-wash text-danger',
   }
   const sizes = {
-    sm: 'px-3 py-1.5 text-[0.8125rem] gap-1.5 rounded-xl',
-    md: 'px-4 py-2.5 text-[0.875rem] gap-2 rounded-2xl',
+    sm: 'h-8 px-3 gap-1.5',
+    md: 'h-10 px-6 gap-2',
   }
   return (
     <button
       {...rest}
       className={cx(
-        'press inline-flex cursor-pointer items-center justify-center font-medium disabled:pointer-events-none disabled:opacity-40',
+        'm3-state m3-label-lg press inline-flex cursor-pointer items-center justify-center rounded-full disabled:pointer-events-none disabled:opacity-40',
         variants[variant],
         sizes[size],
         className,
@@ -83,10 +86,11 @@ export function Chip({
     <button
       {...rest}
       className={cx(
-        'press cursor-pointer whitespace-nowrap rounded-full px-3.5 py-1.5 text-[0.8125rem] font-medium',
+        /* M3 filter chip: 32dp tall, small corner, outlined until selected */
+        'm3-state m3-label-lg press inline-flex h-8 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-sm px-3',
         active
-          ? 'bg-invert text-on-invert shadow-e2'
-          : 'border border-line bg-panel text-muted hover:border-line-strong hover:text-ink',
+          ? 'bg-accent-wash text-accent-ink ring-1 ring-accent-line'
+          : 'text-soft ring-1 ring-line',
         className,
       )}
     />
@@ -97,7 +101,7 @@ export function Tag({ children, className }: { children: ReactNode; className?: 
   return (
     <span
       className={cx(
-        'inline-flex items-center rounded-full bg-fill px-2 py-0.5 text-[0.6875rem] font-medium tracking-[0.01em] text-muted',
+        'm3-label-sm inline-flex items-center rounded-xs bg-panel-2 px-2 py-0.5 text-muted',
         className,
       )}
     >

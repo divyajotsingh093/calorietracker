@@ -57,11 +57,15 @@
 :root {
   color-scheme: light;
 
-  --bg: oklch(0.981 0.006 90);
-  --bg-veil: oklch(1 0 0 / 0.72);
-  --panel: oklch(1 0 0);
-  --panel-2: oklch(0.968 0.005 90);
-  --panel-3: oklch(0.945 0.007 90);
+  /* M3 tonal surfaces: five container steps rather than "panel", "panel-2"
+     and whatever grey looked right. Each is one measured step darker, so
+     stacked surfaces separate without a single border. */
+  --bg: oklch(0.984 0.004 90);            /* surface */
+  --bg-veil: oklch(0.984 0.004 90 / 0.78);
+  --panel: oklch(1 0 0);                  /* surface-container-lowest */
+  --panel-2: oklch(0.966 0.005 90);       /* surface-container */
+  --panel-3: oklch(0.942 0.006 90);       /* surface-container-high */
+  --panel-4: oklch(0.918 0.007 90);       /* surface-container-highest */
   --raised: oklch(1 0 0);
 
   --ink: oklch(0.24 0.021 268);
@@ -100,10 +104,12 @@
   --slot-dinner: oklch(0.62 0.14 250);
   --slot-snack: oklch(0.66 0.17 340);
 
-  --shadow-sm: 0 1px 2px oklch(0.24 0.02 268 / 0.06), 0 1px 3px oklch(0.24 0.02 268 / 0.04);
-  --shadow-md: 0 2px 4px oklch(0.24 0.02 268 / 0.04), 0 8px 20px -6px oklch(0.24 0.02 268 / 0.10);
-  --shadow-lg: 0 4px 8px oklch(0.24 0.02 268 / 0.05), 0 24px 48px -12px oklch(0.24 0.02 268 / 0.16);
-  --shadow-xl: 0 32px 80px -16px oklch(0.24 0.02 268 / 0.28);
+  /* M3 elevation levels 1–5. Two shadows each — a tight key light and a wider
+     ambient one — which is what stops a raised surface reading as a sticker. */
+  --shadow-sm: 0 1px 2px oklch(0.24 0.02 268 / 0.30), 0 1px 3px 1px oklch(0.24 0.02 268 / 0.15);
+  --shadow-md: 0 1px 2px oklch(0.24 0.02 268 / 0.30), 0 2px 6px 2px oklch(0.24 0.02 268 / 0.15);
+  --shadow-lg: 0 4px 8px 3px oklch(0.24 0.02 268 / 0.15), 0 1px 3px oklch(0.24 0.02 268 / 0.30);
+  --shadow-xl: 0 8px 12px 6px oklch(0.24 0.02 268 / 0.15), 0 4px 4px oklch(0.24 0.02 268 / 0.30);
 
   --ring-track: oklch(0.24 0.021 268 / 0.09);
 }
@@ -111,12 +117,14 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: oklch(0.168 0.019 268);
-  --bg-veil: oklch(0.168 0.019 268 / 0.78);
-  --panel: oklch(0.219 0.021 268);
-  --panel-2: oklch(0.252 0.022 268);
-  --panel-3: oklch(0.288 0.023 268);
-  --raised: oklch(0.238 0.022 268);
+  /* the same five steps, stepped up rather than down */
+  --bg: oklch(0.171 0.018 268);           /* surface */
+  --bg-veil: oklch(0.171 0.018 268 / 0.80);
+  --panel: oklch(0.146 0.017 268);        /* surface-container-lowest */
+  --panel-2: oklch(0.232 0.020 268);      /* surface-container */
+  --panel-3: oklch(0.268 0.021 268);      /* surface-container-high */
+  --panel-4: oklch(0.305 0.022 268);      /* surface-container-highest */
+  --raised: oklch(0.232 0.020 268);
 
   --ink: oklch(0.972 0.004 268);
   --ink-soft: oklch(0.855 0.010 268);
@@ -152,10 +160,10 @@
   --slot-dinner: oklch(0.80 0.12 248);
   --slot-snack: oklch(0.80 0.16 340);
 
-  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.4);
-  --shadow-md: 0 8px 24px -8px oklch(0 0 0 / 0.6);
-  --shadow-lg: 0 18px 50px -18px oklch(0 0 0 / 0.75);
-  --shadow-xl: 0 40px 100px -20px oklch(0 0 0 / 0.85);
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.55), 0 1px 3px 1px oklch(0 0 0 / 0.35);
+  --shadow-md: 0 1px 2px oklch(0 0 0 / 0.55), 0 2px 6px 2px oklch(0 0 0 / 0.35);
+  --shadow-lg: 0 4px 8px 3px oklch(0 0 0 / 0.35), 0 1px 3px oklch(0 0 0 / 0.55);
+  --shadow-xl: 0 8px 12px 6px oklch(0 0 0 / 0.35), 0 4px 4px oklch(0 0 0 / 0.55);
 
   --ring-track: oklch(1 0 0 / 0.09);
 }
@@ -255,6 +263,98 @@
   --accent-line: oklch(0.775 0.145 305 / 0.35);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   MATERIAL 3
+   The app now sits on Material Design 3's structure rather than a palette
+   invented here. What M3 actually contributes is not a look but a set of
+   decisions already made: a type scale with fixed sizes, line heights and
+   tracking; a five-step shape scale; tonal surface containers instead of
+   ad-hoc greys; and state layers as a defined opacity over a colour rather
+   than a second colour per state.
+
+   Sizes, weights and the shape scale are from the M3 spec and the Compose
+   implementation. Hues stay ours — M3 is a system for generating a palette,
+   not a requirement to use Google's.
+
+   https://m3.material.io/styles/typography/type-scale-tokens
+   https://m3.material.io/styles/shape/corner-radius-scale
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── shape scale (dp) ── */
+  --m3-corner-xs: 4px;
+  --m3-corner-sm: 8px;
+  --m3-corner-md: 12px;
+  --m3-corner-lg: 16px;
+  --m3-corner-xl: 24px;
+  --m3-corner-full: 9999px;
+
+  /* ── state layers: one opacity over the element's own colour ── */
+  --m3-state-hover: 0.08;
+  --m3-state-focus: 0.10;
+  --m3-state-pressed: 0.10;
+  --m3-state-drag: 0.16;
+
+  /* ── type scale: size / line-height / tracking ── */
+  --m3-display-lg: 3.5625rem/4rem;   /* 57 / 64 */
+  --m3-display-md: 2.8125rem/3.25rem;
+  --m3-display-sm: 2.25rem/2.75rem;
+  --m3-headline-lg: 2rem/2.5rem;
+  --m3-headline-md: 1.75rem/2.25rem;
+  --m3-headline-sm: 1.5rem/2rem;
+  --m3-title-lg: 1.375rem/1.75rem;
+  --m3-title-md: 1rem/1.5rem;
+  --m3-title-sm: 0.875rem/1.25rem;
+  --m3-body-lg: 1rem/1.5rem;
+  --m3-body-md: 0.875rem/1.25rem;
+  --m3-body-sm: 0.75rem/1rem;
+  --m3-label-lg: 0.875rem/1.25rem;
+  --m3-label-md: 0.75rem/1rem;
+  --m3-label-sm: 0.6875rem/1rem;
+}
+
+/* Every step of the scale, as a utility. Tracking and weight travel with the
+   size, which is the point of a type scale — you pick a role, not three
+   numbers. */
+@utility m3-display-lg { font: 400 var(--m3-display-lg) var(--font-display); letter-spacing: -0.015625rem; }
+@utility m3-headline-lg { font: 400 var(--m3-headline-lg) var(--font-display); letter-spacing: 0; }
+@utility m3-headline-md { font: 400 var(--m3-headline-md) var(--font-display); letter-spacing: 0; }
+@utility m3-headline-sm { font: 400 var(--m3-headline-sm) var(--font-display); letter-spacing: 0; }
+@utility m3-title-lg { font: 400 var(--m3-title-lg) var(--font-display); letter-spacing: 0; }
+@utility m3-title-md { font: 500 var(--m3-title-md) var(--font-sans); letter-spacing: 0.009375rem; }
+@utility m3-title-sm { font: 500 var(--m3-title-sm) var(--font-sans); letter-spacing: 0.00625rem; }
+@utility m3-body-lg { font: 400 var(--m3-body-lg) var(--font-sans); letter-spacing: 0.03125rem; }
+@utility m3-body-md { font: 400 var(--m3-body-md) var(--font-sans); letter-spacing: 0.015625rem; }
+@utility m3-body-sm { font: 400 var(--m3-body-sm) var(--font-sans); letter-spacing: 0.025rem; }
+@utility m3-label-lg { font: 500 var(--m3-label-lg) var(--font-sans); letter-spacing: 0.00625rem; }
+@utility m3-label-md { font: 500 var(--m3-label-md) var(--font-sans); letter-spacing: 0.03125rem; }
+@utility m3-label-sm { font: 500 var(--m3-label-sm) var(--font-sans); letter-spacing: 0.03125rem; }
+
+/**
+ * A state layer: the interaction tint is the element's own colour at a fixed
+ * opacity, laid over whatever is underneath. One rule covers hover, focus and
+ * press for any surface, instead of a bespoke hover colour per component.
+ */
+@utility m3-state {
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s var(--ease-out);
+    z-index: -1;
+  }
+  &:hover::after { opacity: var(--m3-state-hover); }
+  &:focus-visible::after { opacity: var(--m3-state-focus); }
+  &:active::after { opacity: var(--m3-state-pressed); }
+}
+
 /* ═══════════════════════ TAILWIND TOKEN BRIDGE ═══════════════════════ */
 
 @theme inline {
@@ -265,6 +365,7 @@
   --color-panel: var(--panel);
   --color-panel-2: var(--panel-2);
   --color-panel-3: var(--panel-3);
+  --color-panel-4: var(--panel-4);
   --color-raised: var(--raised);
 
   --color-ink: var(--ink);
@@ -301,6 +402,12 @@
   --color-ok-wash: var(--ok-wash);
   --color-warn-wash: var(--warn-wash);
   --color-danger-wash: var(--danger-wash);
+
+  --radius-xs: var(--m3-corner-xs);
+  --radius-sm: var(--m3-corner-sm);
+  --radius-md: var(--m3-corner-md);
+  --radius-lg: var(--m3-corner-lg);
+  --radius-xl: var(--m3-corner-xl);
 
   --shadow-e1: var(--shadow-sm);
   --shadow-e2: var(--shadow-md);

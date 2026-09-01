@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { SEED_RECIPES } from '@/data/recipes'
-import { addDays, currentMondayISO } from '@/lib/date'
+import { DAY_MS, addDays, currentMondayISO, fromISO, startOfWeek, toISO } from '@/lib/date'
 import { DEFAULT_PROFILES } from '@/lib/profiles'
 import { DEFAULT_CHAT_MODEL } from '@/lib/assistant'
 import { DEFAULT_OPENROUTER_MODEL } from '@/lib/vision'
@@ -180,42 +180,55 @@ const WEEK2: DaySpec[] = [
   },
 ]
 
-function seedPlan(anchor: string, profiles: Profile[]): PlanEntry[] {
-  const entries: PlanEntry[] = []
-  const push = (date: string, slot: MealSlot, pick: Pick) => {
+/**
+ * A fixed Monday the week alternation counts from, so which template a date
+ * gets never depends on when the app was installed.
+ */
+const EPOCH_MONDAY = '2024-01-01'
+
+/** The template day for a date: week one and week two, alternating forever. */
+function specFor(iso: string): DaySpec {
+  const monday = toISO(startOfWeek(fromISO(iso)))
+  const weeks = Math.round((fromISO(monday).getTime() - fromISO(EPOCH_MONDAY).getTime()) / (7 * DAY_MS))
+  const table = ((weeks % 2) + 2) % 2 === 0 ? WEEK1 : WEEK2
+  return table[(fromISO(iso).getDay() + 6) % 7]
+}
+
+/** Every entry a single date should carry, template plus staples. */
+function entriesFor(date: string, profiles: Profile[]): PlanEntry[] {
+  const out: PlanEntry[] = []
+  const push = (slot: MealSlot, pick: Pick) => {
     profiles.forEach((profile, i) => {
-      // a slot a staple stands in for is not planned into at all
       if (profile.staplesReplace?.includes(slot)) return
       const recipeId = Array.isArray(pick) ? pick[Math.min(i, pick.length - 1)] : pick
-      entries.push({ id: uid(), profileId: profile.id, date, slot, recipeId, servings: 1, eaten: false })
+      out.push({ id: uid(), profileId: profile.id, date, slot, recipeId, servings: 1, eaten: false })
     })
   }
-  // staples first, so day one already has them
-  for (let i = 0; i < 14; i++) {
-    const date = addDays(anchor, i)
-    for (const profile of profiles) {
-      for (const recipeId of profile.staples ?? []) {
-        entries.push({
-          id: uid(),
-          profileId: profile.id,
-          date,
-          slot: 'breakfast',
-          recipeId,
-          servings: 1,
-          eaten: false,
-        })
-      }
+  for (const profile of profiles) {
+    for (const recipeId of profile.staples ?? []) {
+      out.push({
+        id: uid(),
+        profileId: profile.id,
+        date,
+        slot: 'breakfast',
+        recipeId,
+        servings: 1,
+        eaten: false,
+      })
     }
   }
+  const day = specFor(date)
+  push('breakfast', day.breakfast)
+  push('lunch', day.lunch)
+  push('dinner', day.dinner)
+  day.snack.forEach((sn) => push('snack', sn))
+  return out
+}
 
-  ;[...WEEK1, ...WEEK2].forEach((day, i) => {
-    const date = addDays(anchor, i)
-    push(date, 'breakfast', day.breakfast)
-    push(date, 'lunch', day.lunch)
-    push(date, 'dinner', day.dinner)
-    day.snack.forEach((s) => push(date, 'snack', s))
-  })
-  return entries
+function seedPlan(anchor: string, profiles: Profile[]): PlanEntry[] {
+  return Array.from({ length: 14 }, (_, i) => addDays(anchor, i)).flatMap((date) =>
+    entriesFor(date, profiles),
+  )
 }
 
 function freshState(): AppState {
@@ -269,7 +282,10 @@ function load(): AppState {
       recipes: [...SEED_RECIPES.map((r) => edited.get(r.id) ?? r), ...custom],
       plan: parsed.plan ?? base.plan,
       photos: parsed.photos ?? [],
-      anchor: parsed.anchor ?? base.anchor,
+      // Always the current Monday. Keeping whatever was saved froze the app on
+      // the fortnight it was first opened, so "this week" was never planned and
+      // the dates on screen quietly went stale.
+      anchor: base.anchor,
       checked: parsed.checked ?? [],
       extras: parsed.extras ?? [],
       // the conversation is capped on write; trim again on read in case an
@@ -327,6 +343,11 @@ interface Store {
    * Idempotent, and a date is marked once, so deleting a staple sticks.
    */
   syncStaples: (dates: string[]) => void
+  /**
+   * Fill in any of `dates` that has no meals at all. The plan keeps building
+   * itself forward rather than stopping at whatever fortnight was seeded first.
+   */
+  ensurePlan: (dates: string[]) => void
   /** append one turn to the NOVA conversation */
   addTurn: (turn: Omit<ChatTurn, 'id' | 'at'>) => ChatTurn
   clearChat: () => void
@@ -532,6 +553,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         patch((s) => ({ ...s, extras: [...s.extras, { id: uid(), week, text }] })),
 
       removeExtra: (id) => patch((s) => ({ ...s, extras: s.extras.filter((e) => e.id !== id) })),
+
+      ensurePlan: (dates) =>
+        patch((s) => {
+          const empty = dates.filter((d) => !s.plan.some((e) => e.date === d))
+          if (!empty.length) return s
+          return {
+            ...s,
+            plan: [...s.plan, ...empty.flatMap((d) => entriesFor(d, s.profiles))],
+            stapled: [...new Set([...s.stapled, ...empty])],
+          }
+        }),
 
       syncStaples: (dates) =>
         patch((s) => {
